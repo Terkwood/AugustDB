@@ -4,11 +4,11 @@ defmodule SSTable do
   defstruct [:index, :table]
 
   def dump(keyvals) when is_list(keyvals) do
-    s = SSTableParser.dump_to_stream(keyvals)
+    d = SSTableParser.dump_to_stream([keyvals])
 
     index =
       List.flatten(
-        for everything <- s do
+        for everything <- d do
           skip_separators = Enum.drop_every([nil | everything], 2)
 
           {is, _acc} =
@@ -20,6 +20,6 @@ defmodule SSTable do
         end
       )
 
-    %__MODULE__{index: index, table: s}
+    %__MODULE__{index: index, table: IO.iodata_to_binary(Enum.to_list(d))}
   end
 end
