@@ -7,9 +7,6 @@
 # General application configuration
 use Mix.Config
 
-config :august_db,
-  ecto_repos: [AugustDb.Repo]
-
 # Configures the endpoint
 config :august_db, AugustDbWeb.Endpoint,
   url: [host: "localhost"],
