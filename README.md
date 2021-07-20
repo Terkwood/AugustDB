@@ -1,5 +1,17 @@
 # AugustDb
 
+A KV store backed by SSTables.
+
+## Design
+
+Use gb_trees as memtable.
+
+Use nimble_csv to generate sstable format.
+
+Use phoenix to expose a REST API (PUT, GET, DEL).
+
+## Webservice operation
+
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`
