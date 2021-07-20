@@ -1,5 +1,5 @@
 defmodule SSTable do
-  def format() do
+  def dump() do
     raise "todo"
   end
 end
