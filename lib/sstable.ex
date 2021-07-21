@@ -5,7 +5,7 @@ defmodule SSTable do
 
   @spec dump(maybe_improper_list) :: %SSTable{index: list, table: binary}
   @doc """
-  Dump a list of key/value pairs to text accompanied by an index of offsets.
+  Dump a list of key/value pairs to an IO-ready CSV stream, accompanied by an index of offsets.
 
   ## Example
 
