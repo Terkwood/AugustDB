@@ -9,35 +9,46 @@ defmodule SSTable do
 
   ## Example
 
-      iex(82)> SSTable.dump([~w(key1 val1), ~w(key2 val20000), ~w(keywhatever whateverwatever), ~w(lastun ipromise)])
-      %SSTable{
-        index: [
-          {"key1val1", 0},
-          {"key2val20000", 8},
-          {"keywhateverwhateverwatever", 20},
-          {"lastunipromise", 46}
-        ],
-        table: "key1val1\tkey2val20000\tkeywhateverwhateverwatever\tlastunipromise\\n"
-      }
+      iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
+      iex> them.index
+
+      index: [
+        {"k1", 0},
+        {"k2", 5},
+        {"k3", 11},
+      ]
+
+      iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
+      iex> IO.iodata_to_binary(Enum.to_list(them.table))
+      "k1\tv\\nk2\tww\\nk3\tuuu\\n"
 
   """
   def dump(keyvals) when is_list(keyvals) do
-    d = SSTableParser.dump_to_stream([keyvals])
+    csv_stream = SSTableParser.dump_to_stream(keyvals)
 
-    index =
-      List.flatten(
-        for everything <- d do
-          skip_separators = Enum.drop_every([nil | everything], 2)
+    rlens =
+      for row <- csv_stream do
+        rl = row_length(row)
+        key = if length(row) > 0, do: hd(row), else: ""
+        {key, rl}
+      end
 
-          {is, _acc} =
-            Enum.map_reduce(skip_separators, 0, fn row, acc ->
-              {{row, acc}, String.length(row) + acc}
-            end)
+    {index, _acc} = Enum.map_reduce(rlens, 0, fn {key, l}, acc -> {{key, acc}, acc + l} end)
 
-          is
-        end
-      )
+    %__MODULE__{index: index, table: csv_stream}
+  end
 
-    %__MODULE__{index: index, table: IO.iodata_to_binary(Enum.to_list(d))}
+  defp row_length(row) when is_list(row) do
+    ints =
+      for int_col <- row, is_integer(int_col) do
+        1
+      end
+
+    strs =
+      for str_col <- row, is_binary(str_col) do
+        String.length(str_col)
+      end
+
+    Enum.sum(ints) + Enum.sum(strs)
   end
 end
