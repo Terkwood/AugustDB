@@ -3,7 +3,7 @@ NimbleCSV.define(SSTableParser, separator: "\t", escape: "\"")
 defmodule SSTable do
   defstruct [:index, :table]
 
-  @spec dump(maybe_improper_list) :: %SSTable{index: list, table: binary}
+  @spec dump(maybe_improper_list) :: %SSTable{index: list, table: list}
   @doc """
   Dump a list of key/value pairs to an IO-ready CSV stream, accompanied by an index of offsets.
 
