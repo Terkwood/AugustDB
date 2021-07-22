@@ -3,6 +3,8 @@ NimbleCSV.define(SSTableParser, separator: "\t", escape: "\"")
 defmodule SSTable do
   defstruct [:index, :table]
 
+  @csv_header [["key", "value"]]
+
   @spec dump(maybe_improper_list) :: %SSTable{index: list, table: list}
   @doc """
   Dump a list of key/value pairs to an IO-ready CSV stream, accompanied by an index of offsets.
@@ -20,11 +22,11 @@ defmodule SSTable do
 
       iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
       iex> IO.iodata_to_binary(Enum.to_list(them.table))
-      "k1\tv\\nk2\tww\\nk3\tuuu\\n"
+      "key\tvalue\\nk1\tv\\nk2\tww\\nk3\tuuu\\n"
 
   """
   def dump(keyvals) when is_list(keyvals) do
-    csv_stream = SSTableParser.dump_to_stream(keyvals)
+    csv_stream = SSTableParser.dump_to_stream(@csv_header ++ keyvals)
 
     rlens =
       for row <- csv_stream do
