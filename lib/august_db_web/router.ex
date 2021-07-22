@@ -20,9 +20,11 @@ defmodule AugustDbWeb.Router do
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", AugustDbWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", AugustDbWeb do
+    pipe_through :api
+
+    resources "/values", ValueController, except: [:new, :edit]
+  end
 
   # Enables LiveDashboard only for development
   #
