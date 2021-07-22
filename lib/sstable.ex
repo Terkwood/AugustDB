@@ -3,7 +3,8 @@ NimbleCSV.define(SSTableParser, separator: "\t", escape: "\"")
 defmodule SSTable do
   defstruct [:index, :table]
 
-  @csv_header [["key", "value"]]
+  @csv_header [["k", "v"]]
+  @csv_header_bytes 4
 
   @spec dump(maybe_improper_list) :: %SSTable{index: list, table: list}
   @doc """
@@ -15,18 +16,19 @@ defmodule SSTable do
       iex> them.index
 
       index: [
-        {"k1", 0},
-        {"k2", 5},
-        {"k3", 11},
+        {"k1", 4},
+        {"k2", 9},
+        {"k3", 15},
       ]
 
       iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
       iex> IO.iodata_to_binary(Enum.to_list(them.table))
-      "key\tvalue\\nk1\tv\\nk2\tww\\nk3\tuuu\\n"
+      "k\tv\\nk1\tv\\nk2\tww\\nk3\tuuu\\n"
 
   """
   def dump(keyvals) when is_list(keyvals) do
-    csv_stream = SSTableParser.dump_to_stream(@csv_header ++ keyvals)
+    csv_header = SSTableParser.dump_to_stream(@csv_header)
+    csv_stream = SSTableParser.dump_to_stream(keyvals)
 
     rlens =
       for row <- csv_stream do
@@ -35,9 +37,10 @@ defmodule SSTable do
         {key, rl}
       end
 
-    {index, _acc} = Enum.map_reduce(rlens, 0, fn {key, l}, acc -> {{key, acc}, acc + l} end)
+    {index, _acc} =
+      Enum.map_reduce(rlens, @csv_header_bytes, fn {key, l}, acc -> {{key, acc}, acc + l} end)
 
-    %__MODULE__{index: index, table: csv_stream}
+    %__MODULE__{index: index, table: Stream.concat(csv_header, csv_stream)}
   end
 
   defp row_length(row) when is_list(row) do
