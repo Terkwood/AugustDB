@@ -48,7 +48,11 @@ defmodule SSTable do
     {:ok, file} = :file.open(file_name, [:read, :binary])
     out = SSTableParser.parse_string(@csv_header_string <> keep_reading(file, offset))
     :file.close(file)
-    out
+
+    case out do
+      [[k, v]] -> [k, v]
+      _ -> nil
+    end
   end
 
   @seek_bytes 64
