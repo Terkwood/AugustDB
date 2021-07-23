@@ -8,7 +8,6 @@ defmodule SSTable do
   @csv_header_bytes 4
   @csv_row_separator "\n"
 
-  @spec dump(maybe_improper_list) :: %SSTable{index: list, table: list}
   @doc """
   Dump a list of key/value pairs to an IO-ready CSV stream, accompanied by an index of offsets.
 
