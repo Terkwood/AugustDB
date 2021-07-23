@@ -44,18 +44,23 @@ defmodule SSTable do
     %__MODULE__{index: index, table: Stream.concat(csv_header, csv_stream)}
   end
 
-  def seek(file_name, _key, offset \\ 0) do
+  def seek(file_name, offset \\ 0) do
     {:ok, file} = :file.open(file_name, [:read, :binary])
-    :file.position(file, offset)
-    SSTableParser.parse_string(@csv_header_string <> keep_reading(file))
+    out = SSTableParser.parse_string(@csv_header_string <> keep_reading(file, offset))
+    :file.close(file)
+
+    case out do
+      [[k, v]] -> [k, v]
+      _ -> nil
+    end
   end
 
   @seek_bytes 64
-  defp keep_reading(file, acc \\ "") do
-    case :file.read(file, @seek_bytes) do
+  defp keep_reading(file, from, acc \\ "") do
+    case :file.pread(file, from, @seek_bytes) do
       {:ok, data} ->
         case stop_at_row_separator(data) do
-          :continue -> keep_reading(file, acc <> data)
+          :continue -> keep_reading(file, from + @seek_bytes, acc <> data)
           {:stop, up_to_sep} -> acc <> up_to_sep
         end
 
@@ -65,8 +70,6 @@ defmodule SSTable do
   end
 
   defp stop_at_row_separator(data) do
-    IO.inspect(data)
-
     case String.split(data, @csv_row_separator) do
       [_just_one] ->
         :continue
