@@ -20,7 +20,6 @@ defmodule AugustDbWeb.ValueController do
   def update(conn, %{"id" => key, "value" => value})
       when is_binary(key) and is_binary(value) do
     Memtable.update(key, value)
-
-    render(conn, "update.json", %{key: key, value: value})
+    conn |> render("update.json", %{key: key, value: value})
   end
 end
