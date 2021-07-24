@@ -10,6 +10,14 @@ Use nimble_csv to generate sstable format.
 
 Use phoenix to expose a REST API (PUT, GET, DEL).
 
+## Dev environment
+
+You should enable [multi-time warp mode](https://erlang.org/doc/apps/erts/time_correction.html#Multi_Time_Warp_Mode) during development in the REPL.
+
+```sh
+`ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix`
+```
+
 ## Generating docs
 
 You can [follow the CLI instructions for ExDoc](https://github.com/elixir-lang/ex_doc#using-exdoc-via-command-line):
