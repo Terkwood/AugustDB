@@ -17,7 +17,10 @@ defmodule AugustDbWeb.ValueController do
   curl -X PUT  -d value='meh meh'  http://localhost:4000/api/values/1
   ```
   """
-  def update(_conn, %{"id" => _key, "value" => _value}) do
-    raise "todo"
+  def update(conn, %{"id" => key, "value" => value})
+      when is_binary(key) and is_binary(value) do
+    Memtable.update(key, value)
+
+    render(conn, "update.json", %{key: key, value: value})
   end
 end
