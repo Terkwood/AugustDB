@@ -6,7 +6,7 @@ defmodule AugustDbWeb.ValueView do
     render_one(data, ValueView, "value.json")
   end
 
-  def render("value.json", data) do
+  def render("value.json", %{value: data}) do
     data
   end
 
