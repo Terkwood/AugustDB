@@ -10,6 +10,10 @@ Use nimble_csv to generate sstable format.
 
 Use phoenix to expose a REST API (PUT, GET, DEL).
 
+### Inspiration
+
+We worked from https://github.com/tamas-soos/expoll/blob/master/lib/ex_poll_web/views/poll_view.ex as an example
+
 ## Dev environment
 
 You should enable [multi-time warp mode](https://erlang.org/doc/apps/erts/time_correction.html#Multi_Time_Warp_Mode) during development in the REPL.
