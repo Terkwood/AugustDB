@@ -9,7 +9,7 @@ defmodule AugustDbWeb.ValueController do
   """
   def show(conn, %{"id" => key}) do
     case Memtable.query(key) do
-      {:value, data, _time} when is_binary(data) -> conn |> render("show.json", data)
+      {:value, data, _time} when is_binary(data) -> render(conn, "show.json", %{value: data})
       {:value, _data, _time} -> conn |> send_resp(422, "Binary data cannot be shown")
       _ -> conn |> send_resp(404, "")
     end
