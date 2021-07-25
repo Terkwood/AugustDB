@@ -10,8 +10,8 @@ defmodule AugustDbWeb.ValueController do
   def show(conn, %{"id" => key}) do
     case Memtable.query(key) do
       {:value, data, _time} when is_binary(data) -> render(conn, "show.json", %{value: data})
-      {:value, _data, _time} -> conn |> send_resp(422, "Binary data cannot be shown")
-      _ -> conn |> send_resp(404, "")
+      {:value, _data, _time} -> send_resp(conn, 422, "Binary data cannot be displayed")
+      _ -> send_resp(conn, 404, "")
     end
   end
 
@@ -24,6 +24,13 @@ defmodule AugustDbWeb.ValueController do
   def update(conn, %{"id" => key, "value" => value})
       when is_binary(key) and is_binary(value) do
     Memtable.update(key, value)
-    conn |> send_resp(204, "")
+
+    send_resp(conn, 204, "")
+  end
+
+  def delete(conn, %{"id" => key}) do
+    Memtable.delete(key)
+
+    send_resp(conn, 204, "")
   end
 end
