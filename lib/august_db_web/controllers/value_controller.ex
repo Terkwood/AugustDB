@@ -28,6 +28,12 @@ defmodule AugustDbWeb.ValueController do
     send_resp(conn, 204, "")
   end
 
+  @doc """
+  e.g.
+  ```sh
+  curl  -X DELETE http://localhost:4000/api/values/1
+  ```
+  """
   def delete(conn, %{"id" => key}) do
     Memtable.delete(key)
 
