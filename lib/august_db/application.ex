@@ -8,7 +8,7 @@ defmodule AugustDb.Application do
   def start(_type, _args) do
     children = [
       # Start the Memtable agent
-      {Memtable, :gb_trees.empty()},
+      {Memtable, %Memtable{}},
       # Start the Telemetry supervisor
       AugustDbWeb.Telemetry,
       # Start the PubSub system
