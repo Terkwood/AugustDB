@@ -62,9 +62,11 @@ defmodule Memtable do
 
     file_stream = File.stream!(fname)
 
-    index_json = Jason.encode(sstable.index)
+    IO.inspect(sstable)
 
-    index_json |> Stream.into(file_stream) |> Stream.run()
+    {:ok, index_json} = Jason.encode(sstable.index)
+
+    [index_json] |> Stream.into(file_stream) |> Stream.run()
 
     sstable.table |> Stream.into(file_stream) |> Stream.run()
 
