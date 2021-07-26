@@ -57,7 +57,7 @@ defmodule SSTable do
 
   def from(memtable) do
     maybe_kvs =
-      for entry <- memtable do
+      for entry <- :gb_trees.iterator(memtable) do
         case entry do
           {:value, {key, value, _time}} -> [key, value]
           _ -> nil
