@@ -55,6 +55,20 @@ defmodule SSTable do
     end
   end
 
+  def from(memtable) do
+    maybe_kvs =
+      for entry <- memtable do
+        case entry do
+          {:value, {key, value, _time}} -> [key, value]
+          _ -> nil
+        end
+      end
+
+    kvs = Enum.filter(maybe_kvs, &(&1 != nil))
+
+    dump(kvs)
+  end
+
   @seek_bytes 64
   defp keep_reading(file, from, acc \\ "") do
     case :file.pread(file, from, @seek_bytes) do

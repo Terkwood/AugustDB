@@ -47,6 +47,30 @@ defmodule Memtable do
   end
 
   def flush() do
+    flushing = Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _} -> current end)
+
+    # Forget about whatever we were flushing before,
+    # and move the current memtable into the flushing state.
+    # Then clear the current memtable.
+    Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
+      %__MODULE__{
+        current: :gb_trees.empty(),
+        flushing: current
+      }
+    end)
+
+    sstable = SSTable.from(flushing)
+
+    raise "todo"
+
+    # Finished.  Clear the flushing table state.
+    Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
+      %__MODULE__{
+        current: current,
+        flushing: :gb_trees.empty()
+      }
+    end)
+
     raise "todo"
   end
 end
