@@ -15,8 +15,7 @@ defmodule SSTable do
 
       iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
       iex> them.index
-
-      index: [
+      [
         {"k1", 4},
         {"k2", 9},
         {"k3", 15},
@@ -53,6 +52,20 @@ defmodule SSTable do
       [[k, v]] -> [k, v]
       _ -> nil
     end
+  end
+
+  def from(memtable) do
+    maybe_kvs =
+      for entry <- :gb_trees.to_list(memtable) do
+        case entry do
+          {key, {:value, value, _time}} -> [key, value]
+          _ -> nil
+        end
+      end
+
+    kvs = Enum.filter(maybe_kvs, &(&1 != nil))
+
+    dump(kvs)
   end
 
   @seek_bytes 64
