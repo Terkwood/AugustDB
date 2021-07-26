@@ -26,9 +26,6 @@ defmodule Memtable do
   end
 
   def update(key, value) do
-    IO.inspect(key)
-    IO.inspect(value)
-
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: flushing} ->
       %__MODULE__{
         current: :gb_trees.enter(key, {:value, value, System.monotonic_time()}, current),
@@ -47,6 +44,38 @@ defmodule Memtable do
   end
 
   def flush() do
-    raise "todo"
+    flushing = Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _} -> current end)
+
+    # Forget about whatever we were flushing before,
+    # and move the current memtable into the flushing state.
+    # Then clear the current memtable.
+    Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
+      %__MODULE__{
+        current: :gb_trees.empty(),
+        flushing: current
+      }
+    end)
+
+    sstable = SSTable.from(flushing)
+
+    fname = "#{:erlang.system_time()}.sst"
+
+    file_stream = File.stream!(fname)
+
+    index_binary = :erlang.term_to_binary(sstable.index)
+
+    index_stream = Stream.cycle([index_binary]) |> Stream.take(1)
+
+    table_stream = sstable.table
+
+    Stream.concat(index_stream, table_stream) |> Stream.into(file_stream) |> Stream.run()
+
+    # Finished.  Clear the flushing table state.
+    Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
+      %__MODULE__{
+        current: current,
+        flushing: :gb_trees.empty()
+      }
+    end)
   end
 end
