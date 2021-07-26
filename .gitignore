@@ -35,3 +35,4 @@ npm-debug.log
 
 # AugustDB SSTable output
 *.sst
+*.idx
