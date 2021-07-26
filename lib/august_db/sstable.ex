@@ -15,11 +15,10 @@ defmodule SSTable do
 
       iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
       iex> them.index
-
-      index: [
-        {"k1", 4},
-        {"k2", 9},
-        {"k3", 15},
+      [
+        ["k1", 4],
+        ["k2", 9],
+        ["k3", 15],
       ]
 
       iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
