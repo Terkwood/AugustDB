@@ -46,6 +46,9 @@ defmodule Memtable do
   def flush() do
     flushing = Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _} -> current end)
 
+    IO.puts("to flush")
+    IO.inspect(flushing)
+
     # Forget about whatever we were flushing before,
     # and move the current memtable into the flushing state.
     # Then clear the current memtable.

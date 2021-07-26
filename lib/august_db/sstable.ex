@@ -56,15 +56,22 @@ defmodule SSTable do
   end
 
   def from(memtable) do
+    IO.puts("hey")
+
     maybe_kvs =
-      for entry <- :gb_trees.iterator(memtable) do
+      for entry <- :gb_trees.to_list(memtable) do
+        IO.inspect(entry)
+
         case entry do
-          {:value, {key, value, _time}} -> [key, value]
+          {key, {:value, value, _time}} -> [key, value]
           _ -> nil
         end
       end
 
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
+
+    IO.puts("from")
+    IO.inspect(kvs)
 
     dump(kvs)
   end
