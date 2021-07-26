@@ -67,9 +67,9 @@ defmodule Memtable do
 
     IO.inspect(sstable)
 
-    {:ok, index_json} = Jason.encode(sstable.index)
+    index_binary = :erlang.term_to_binary(sstable.index)
 
-    [index_json] |> Stream.into(file_stream) |> Stream.run()
+    [index_binary] |> Stream.into(file_stream) |> Stream.run()
 
     sstable.table |> Stream.into(file_stream) |> Stream.run()
 
