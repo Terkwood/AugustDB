@@ -46,9 +46,6 @@ defmodule Memtable do
   def flush() do
     flushing = Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _} -> current end)
 
-    IO.puts("to flush")
-    IO.inspect(flushing)
-
     # Forget about whatever we were flushing before,
     # and move the current memtable into the flushing state.
     # Then clear the current memtable.
@@ -65,13 +62,13 @@ defmodule Memtable do
 
     file_stream = File.stream!(fname)
 
-    IO.inspect(sstable)
-
     index_binary = :erlang.term_to_binary(sstable.index)
 
-    [index_binary] |> Stream.into(file_stream) |> Stream.run()
+    index_stream = Stream.cycle([index_binary]) |> Stream.take(1)
 
-    sstable.table |> Stream.into(file_stream) |> Stream.run()
+    table_stream = sstable.table
+
+    Stream.concat(index_stream, table_stream) |> Stream.into(file_stream) |> Stream.run()
 
     # Finished.  Clear the flushing table state.
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
