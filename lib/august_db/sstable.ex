@@ -67,12 +67,13 @@ defmodule SSTable do
     maybe_offset =
       case Enum.find(index, fn {a, _offset} -> a == key end) do
         nil -> :none
-        {_, t} when t == @tombstone_string -> :none
+        {_, t} when t == @tombstone_string -> :tombstone
         {a, offset} when a == key -> offset
       end
 
     case maybe_offset do
       :none -> :none
+      :tombstone -> :tombstone
       offset -> seek("#{file_timestamp}.sst", offset)
     end
   end
