@@ -21,7 +21,7 @@ We worked from https://github.com/tamas-soos/expoll/blob/master/lib/ex_poll_web/
 You should enable [multi-time warp mode](https://erlang.org/doc/apps/erts/time_correction.html#Multi_Time_Warp_Mode) during development in the REPL.
 
 ```sh
-`ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix`
+ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix
 ```
 
 ## Generating docs
