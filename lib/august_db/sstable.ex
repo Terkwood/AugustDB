@@ -44,7 +44,23 @@ defmodule SSTable do
     %__MODULE__{index: index, table: Stream.concat(csv_header, csv_stream)}
   end
 
-  def query(file_timestamp, key) do
+  @doc """
+  Query an SSTable file using its associated index file and a key,
+  returning a value if present. Filters tombstone entries.
+
+  There must be an associated `<timestamp>.idx` file present,
+  or this function will fail.
+
+  ## Example
+
+  ```elixir
+  SSTable.query("1627340924286645039.sst", "a")
+  SSTable.query(1627340924286645039, "a")
+  ```
+  """
+  def query(sst_file_or_timestamp, key) do
+    file_timestamp = hd(String.split("#{sst_file_or_timestamp}", ".sst"))
+
     {:ok, index_bin} = File.read("#{file_timestamp}.idx")
     index = :erlang.binary_to_term(index_bin)
 
