@@ -93,6 +93,7 @@ defmodule SSTable do
       for entry <- :gb_trees.to_list(memtable) do
         case entry do
           {key, {:value, value, _time}} -> [key, value]
+          {key, {:tombstone, _time}} -> [key, @tombstone_string]
           _ -> nil
         end
       end
