@@ -7,6 +7,7 @@ defmodule SSTable do
   @csv_header_string "k\tv\n"
   @csv_header_bytes 4
   @csv_row_separator "\n"
+  @tombstone_string "$T$"
 
   @doc """
   Dump a list of key/value pairs to an IO-ready CSV stream, accompanied by an index of offsets.
@@ -44,22 +45,30 @@ defmodule SSTable do
   end
 
   def query(file_timestamp, key) do
-    {:ok, sst} = :file.open("#{file_timestamp}.sst")
-    {:ok, index_bin} = :file.open("#{file_timestamp}.idx")
+    {:ok, index_bin} = File.read("#{file_timestamp}.idx")
     index = :erlang.binary_to_term(index_bin)
 
-    raise "todo: find offset"
-    raise "todo: call seek"
+    maybe_offset =
+      case Enum.find(index, fn {a, _offset} -> a == key end) do
+        nil -> :none
+        {_, t} when t == @tombstone_string -> :none
+        {a, offset} when a == key -> offset
+      end
+
+    case maybe_offset do
+      :none -> :none
+      offset -> seek("#{file_timestamp}.sst", offset)
+    end
   end
 
-  defp seek(file_name, offset \\ 0) do
+  defp seek(file_name, offset) do
     {:ok, file} = :file.open(file_name, [:read, :binary])
     out = SSTableParser.parse_string(@csv_header_string <> keep_reading(file, offset))
     :file.close(file)
 
     case out do
       [[k, v]] -> [k, v]
-      _ -> nil
+      _ -> :none
     end
   end
 
