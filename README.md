@@ -12,7 +12,9 @@ Use phoenix to expose a REST API (PUT, GET, DEL).
 
 ### Inspiration
 
-We worked from https://github.com/tamas-soos/expoll/blob/master/lib/ex_poll_web/views/poll_view.ex as an example
+Kleppmann, _Designing Data-Intensive Applications_
+
+We worked from https://github.com/tamas-soos/expoll/blob/master/lib/ex_poll_web/views/poll_view.ex as a preliminary example for Phoenix
 
 ## Dev environment
 
