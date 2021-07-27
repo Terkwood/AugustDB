@@ -43,7 +43,16 @@ defmodule SSTable do
     %__MODULE__{index: index, table: Stream.concat(csv_header, csv_stream)}
   end
 
-  def seek(file_name, offset \\ 0) do
+  def query(file_timestamp, key) do
+    {:ok, sst} = :file.open("#{file_timestamp}.sst")
+    {:ok, index_bin} = :file.open("#{file_timestamp}.idx")
+    index = :erlang.binary_to_term(index_bin)
+
+    raise "todo: find offset"
+    raise "todo: call seek"
+  end
+
+  defp seek(file_name, offset \\ 0) do
     {:ok, file} = :file.open(file_name, [:read, :binary])
     out = SSTableParser.parse_string(@csv_header_string <> keep_reading(file, offset))
     :file.close(file)
