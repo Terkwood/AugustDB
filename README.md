@@ -1,20 +1,26 @@
-# AugustDb
+# AugustDB
 
-A KV store backed by SSTables.
+A key/value store backed by SSTables.
 
-## Design
+## Initial design
 
 Use gb_trees as memtable.
 
-Use nimble_csv to generate sstable format.
+Use nimble_csv to generate SSTable format.
 
 Use phoenix to expose a REST API (PUT, GET, DEL).
 
+## Notional distributed system
+
+First implement a local key-value store that uses a memtable, SSTables, and a commit log.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes.
+
+I'll probably abandon this project before I get that far, but it doesn't hurt to dream! 
+
 ### Inspiration
 
-Kleppmann, _Designing Data-Intensive Applications_
+[Kleppmann: Designing Data-Intensive Applications](https://dataintensive.net/) gives a fantastic summary of local-node operation for data stores using SSTable, followed by detail on strategies for replication and partitioning.  Check it out!
 
-We worked from https://github.com/tamas-soos/expoll/blob/master/lib/ex_poll_web/views/poll_view.ex as a preliminary example for Phoenix
+I sourced https://github.com/tamas-soos/expoll/blob/master/lib/ex_poll_web/views/poll_view.ex as a preliminary example for working with Phoenix.
 
 ## Dev environment
 
@@ -38,18 +44,9 @@ ex_doc "AugustDB" "0.0.0" "_build/dev/lib/august_db/ebin"
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`
-  * Create and migrate your database with `mix ecto.setup`
   * Install Node.js dependencies with `npm install` inside the `assets` directory
   * Start Phoenix endpoint with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
-
-## Learn more
-
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
