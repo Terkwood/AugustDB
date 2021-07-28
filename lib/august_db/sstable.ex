@@ -54,11 +54,26 @@ defmodule SSTable do
   This function returns `:tombstone` as the value component
   for deleted key/value pairs.
 
-  ## Example
+  ## Examples
+
+  Basic query
 
   ```elixir
   SSTable.query("1627340924286645039.sst", "a")
   SSTable.query(1627340924286645039, "a")
+  ```
+
+  Combined with Memtable
+
+  ```elixir
+  iex(3)> Memtable.update("bar","BAZ"); Memtable.delete("foo"); Memtable.flush()
+  :ok
+  iex(4)> SSTable.query("1627506141024887881.sst", "bar")
+  ["bar", "BAZ"]
+  iex(5)> SSTable.query("1627506141024887881.sst", "foo")
+  ["foo", :tombstone]
+  iex(6)> SSTable.query("1627506141024887881.sst", "a")
+  :none
   ```
   """
   def query(sst_file_or_timestamp, key) do
@@ -70,14 +85,19 @@ defmodule SSTable do
     maybe_offset =
       case Enum.find(index, fn {a, _offset} -> a == key end) do
         nil -> :none
-        {a, t} when a == key and t == @tombstone_string -> :tombstone
-        {a, offset} when a == key -> offset
+        {_, offset} -> offset
       end
 
-    case maybe_offset do
+    maybe_value =
+      case maybe_offset do
+        :none -> :none
+        offset -> seek("#{file_timestamp}.sst", offset)
+      end
+
+    case maybe_value do
       :none -> :none
-      :tombstone -> :tombstone
-      offset -> seek("#{file_timestamp}.sst", offset)
+      [k, t] when t == @tombstone_string -> [k, :tombstone]
+      [k, v] -> [k, v]
     end
   end
 
