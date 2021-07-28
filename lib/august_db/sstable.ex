@@ -51,6 +51,9 @@ defmodule SSTable do
   There must be an associated `<timestamp>.idx` file present,
   or this function will fail.
 
+  This function returns `:tombstone` as the value component
+  for deleted key/value pairs.
+
   ## Example
 
   ```elixir
@@ -67,7 +70,7 @@ defmodule SSTable do
     maybe_offset =
       case Enum.find(index, fn {a, _offset} -> a == key end) do
         nil -> :none
-        {_, t} when t == @tombstone_string -> :tombstone
+        {a, t} when a == key and t == @tombstone_string -> :tombstone
         {a, offset} when a == key -> offset
       end
 
