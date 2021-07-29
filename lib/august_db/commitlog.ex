@@ -1,10 +1,7 @@
 NimbleCSV.define(CommitLogParser, separator: "\t", escape: "\"")
 
 defmodule CommitLog do
-  #  @csv_header [["k", "v", "t"]]
-  #  @csv_header_string "k\tv\tt\n"
-  #  @csv_header_bytes 6
-  #  @csv_row_separator "\n"
+  @tsv_header_string "k\tv\tt\n"
   @tombstone_string Tombstone.string()
   @log_file "commit.log"
 
@@ -18,5 +15,24 @@ defmodule CommitLog do
       key <> "\t" <> value <> "\t" <> "#{:erlang.monotonic_time()}" <> "\n",
       [:append]
     )
+  end
+
+  def replay() do
+    # we need the header line so that NimbleCSV doesn't fail
+    hdr = Stream.cycle([@tsv_header_string]) |> Stream.take(1)
+    log = File.stream!(@log_file, read_ahead: 100_000)
+
+    Memtable.clear()
+
+    Stream.concat(hdr, log)
+    |> CommitLogParser.parse_stream()
+    |> Stream.map(fn [k, v, _] ->
+      if v == @tombstone_string do
+        Memtable.delete(k)
+      else
+        Memtable.update(k, v)
+      end
+    end)
+    |> Stream.run()
   end
 end
