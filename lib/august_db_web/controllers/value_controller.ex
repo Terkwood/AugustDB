@@ -23,6 +23,8 @@ defmodule AugustDbWeb.ValueController do
   """
   def update(conn, %{"id" => key, "value" => value})
       when is_binary(key) and is_binary(value) do
+    CommitLog.append(key, value)
+
     Memtable.update(key, value)
 
     send_resp(conn, 204, "")

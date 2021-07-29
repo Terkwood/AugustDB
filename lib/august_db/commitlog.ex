@@ -1,9 +1,12 @@
 defmodule CommitLog do
-  def append(_key, :tombstone) do
-    raise "todo"
-  end
+  # @tombstone_string Tombstone.string()
+  @log_file "commit.log"
 
-  def append(_key, _value) do
-    raise "todo"
+  # def append(key, :tombstone) do
+  #  __MODULE__.append(key, @tombstone_string)
+  # end
+
+  def append(key, value) do
+    File.write!(@log_file, key <> "\t" <> value <> "\n", :append)
   end
 end
