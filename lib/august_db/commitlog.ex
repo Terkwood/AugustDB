@@ -21,6 +21,7 @@ defmodule CommitLog do
   end
 
   def replay() do
+    raise "todo"
     # we need the header line so that NimbleCSV doesn't fail
     # hdr = SSTableParser.dump_to_stream(@tsv_header)
     log = File.stream!(@log_file, read_ahead: 100_000)
