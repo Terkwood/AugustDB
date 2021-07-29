@@ -9,6 +9,8 @@ defmodule AugustDb.Application do
     children = [
       # Start the Memtable agent
       {Memtable, %Memtable{}},
+      # Replay the CommitLog
+      {Task, fn -> CommitLog.replay() end},
       # Start the Telemetry supervisor
       AugustDbWeb.Telemetry,
       # Start the PubSub system
