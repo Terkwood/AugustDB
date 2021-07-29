@@ -1,6 +1,6 @@
 # AugustDB
 
-A key/value store backed by SSTables.
+A key/value store backed by [LSM Trees](http://www.benstopford.com/2015/02/14/log-structured-merge-trees/) and SSTables.
 
 ## Initial design
 
