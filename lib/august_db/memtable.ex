@@ -84,4 +84,16 @@ defmodule Memtable do
       }
     end)
   end
+
+  @doc """
+  Called by `CommitLog.replay()`
+  """
+  def clear() do
+    Agent.update(__MODULE__, fn %__MODULE__{current: _, flushing: _} ->
+      %__MODULE__{
+        current: :gb_trees.empty(),
+        flushing: :gb_trees.empty()
+      }
+    end)
+  end
 end
