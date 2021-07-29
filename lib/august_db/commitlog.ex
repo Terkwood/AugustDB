@@ -1,10 +1,7 @@
 NimbleCSV.define(CommitLogParser, separator: "\t", escape: "\"")
 
 defmodule CommitLog do
-  @tsv_header [["k", "v", "t"]]
   @tsv_header_string "k\tv\tt\n"
-  @tsv_header_bytes 6
-  @tsv_row_separator "\n"
   @tombstone_string Tombstone.string()
   @log_file "commit.log"
 
@@ -21,19 +18,20 @@ defmodule CommitLog do
   end
 
   def replay() do
-    raise "todo"
     # we need the header line so that NimbleCSV doesn't fail
-    # hdr = SSTableParser.dump_to_stream(@tsv_header)
+    hdr = Stream.cycle([@tsv_header_string]) |> Stream.take(1)
     log = File.stream!(@log_file, read_ahead: 100_000)
 
     Memtable.clear()
 
-    # Stream.concat(hdr, log)
-    log
+    Stream.concat(hdr, log)
     |> CommitLogParser.parse_stream()
-    |> Stream.map(fn l ->
-      IO.inspect(l)
-      # Memtable.update(k, v)
+    |> Stream.map(fn [k, v, _] ->
+      if v == @tombstone_string do
+        Memtable.delete(k)
+      else
+        Memtable.update(k, v)
+      end
     end)
     |> Stream.run()
   end
