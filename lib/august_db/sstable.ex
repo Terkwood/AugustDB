@@ -44,6 +44,23 @@ defmodule SSTable do
     %__MODULE__{index: index, table: Stream.concat(csv_header, csv_stream)}
   end
 
+  def query_all(key) do
+    sst_files = Path.wildcard("*.sst")
+    raise "query function can become private"
+    raise "todo: fix query sig so it ignores the key"
+  end
+
+  defp query_all(key, []) do
+    :none
+  end
+
+  defp query_all(key, [sst_file | rest]) do
+    case query(key, sst_file) do
+      :none -> query_all(key, rest)
+      _ -> raise "todo: fix query signature so it ignores the key"
+    end
+  end
+
   @doc """
   Query an SSTable file using its associated index file and a key,
   returning a value if present. Filters tombstone entries.
