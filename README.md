@@ -2,6 +2,8 @@
 
 A key/value store backed by [LSM Trees](http://www.benstopford.com/2015/02/14/log-structured-merge-trees/) and SSTables.
 
+This project is a work in progress 🚧 and is being developed primarily to suit the author's personal study goals 🎓.  But if you find something in here that helps you learn, that's great too!
+
 ## Initial design
 
 Use gb_trees as memtable.
@@ -13,8 +15,6 @@ Use phoenix to expose a REST API (PUT, GET, DEL).
 ## Notional distributed system
 
 First implement a local key-value store that uses a memtable, SSTables, and a commit log.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes.
-
-I'll probably abandon this project before I get that far, but it doesn't hurt to dream! 
 
 ### Inspiration
 
