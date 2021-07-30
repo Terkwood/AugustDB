@@ -44,40 +44,21 @@ defmodule SSTable do
     %__MODULE__{index: index, table: Stream.concat(csv_header, csv_stream)}
   end
 
-  def query_all(key) do
-    sst_files = Path.wildcard("*.sst")
-    raise "query function can become private"
-    raise "todo: fix query sig so it ignores the key"
-  end
-
-  defp query_all(key, []) do
-    :none
-  end
-
-  defp query_all(key, [sst_file | rest]) do
-    case query(key, sst_file) do
-      :none -> query_all(key, rest)
-      _ -> raise "todo: fix query signature so it ignores the key"
-    end
-  end
-
   @doc """
-  Query an SSTable file using its associated index file and a key,
+  Query all SSTable files using their associated index file and a key,
   returning a value if present. Filters tombstone entries.
 
-  There must be an associated `<timestamp>.idx` file present,
-  or this function will fail.
+  There must be an associated `<timestamp>.idx` file present for each SSTable,
+  or the private query function will fail.
 
-  This function returns `:tombstone` as the value component
-  for deleted key/value pairs.
+  This function returns `:tombstone` in the case of deleted entries.
 
   ## Examples
 
   Basic query
 
   ```elixir
-  SSTable.query("1627340924286645039.sst", "a")
-  SSTable.query(1627340924286645039, "a")
+  SSTable.query_all("a")
   ```
 
   Combined with Memtable
@@ -85,15 +66,32 @@ defmodule SSTable do
   ```elixir
   iex(3)> Memtable.update("bar","BAZ"); Memtable.delete("foo"); Memtable.flush()
   :ok
-  iex(4)> SSTable.query("1627506141024887881.sst", "bar")
-  ["bar", "BAZ"]
-  iex(5)> SSTable.query("1627506141024887881.sst", "foo")
-  ["foo", :tombstone]
-  iex(6)> SSTable.query("1627506141024887881.sst", "a")
+  iex(4)> SSTable.query_all("bar")
+  "BAZ"
+  iex(5)> SSTable.query_all("foo")
+  :tombstone
+  iex(6)> SSTable.query("a")
   :none
   ```
   """
-  def query(sst_file_or_timestamp, key) do
+  def query_all(key) do
+    sst_files = Path.wildcard("*.sst")
+    query_all(key, sst_files)
+  end
+
+  defp query_all(_key, []) do
+    :none
+  end
+
+  defp query_all(key, [sst_file | rest]) do
+    case query(key, sst_file) do
+      :none -> query_all(key, rest)
+      :tombstone -> :tombstone
+      value -> value
+    end
+  end
+
+  defp query(key, sst_file_or_timestamp) do
     file_timestamp = hd(String.split("#{sst_file_or_timestamp}", ".sst"))
 
     {:ok, index_bin} = File.read("#{file_timestamp}.idx")
@@ -113,8 +111,8 @@ defmodule SSTable do
 
     case maybe_value do
       :none -> :none
-      [k, t] when t == @tombstone_string -> [k, :tombstone]
-      [k, v] -> [k, v]
+      [_, t] when t == @tombstone_string -> :tombstone
+      [_, v] -> v
     end
   end
 
