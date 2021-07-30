@@ -7,7 +7,7 @@ defmodule AugustDbWeb.ValueView do
   end
 
   def render("value.json", %{value: data}) do
-    data
+    Macro.unescape_string(data)
   end
 
   def render("update.json", %{key: key, value: value}) do
