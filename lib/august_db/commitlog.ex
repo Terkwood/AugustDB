@@ -5,6 +5,11 @@ defmodule CommitLog do
   @tombstone_string Tombstone.string()
   @log_file "commit.log"
 
+  # Approximately one second
+  @mono_tick 1_000_000_000
+  # Trim after this many ticks
+  @trim_after 15 * 60 * @mono_tick
+
   def append(key, :tombstone) do
     __MODULE__.append(key, @tombstone_string)
   end
