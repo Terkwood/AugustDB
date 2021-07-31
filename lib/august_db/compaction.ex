@@ -10,6 +10,24 @@ defmodule Compaction do
     raise "todo"
   end
 
+  defmodule Sort do
+    def lowest([{k, v} | newer]) do
+      lowest([{k, v} | newer], {k, v})
+    end
+
+    def lowest([], {acc_k, acc_v}) do
+      {acc_k, acc_v}
+    end
+
+    def lowest([{next_k, next_v} | newer], {acc_k, acc_v}) do
+      if next_k <= acc_k do
+        lowest(newer, {next_k, next_v})
+      else
+        lowest(newer, {acc_k, acc_v})
+      end
+    end
+  end
+
   defp merge(many_paths) when is_list(many_paths) do
     output_path = "#{:erlang.system_time()}.sst"
 
@@ -25,8 +43,8 @@ defmodule Compaction do
 
     many_kv_devices =
       Enum.map(many_devices, fn d ->
-        {k, v} = parse_tsv(:file.read_line(d))
-        {k, v, d}
+        kv_or_eof = parse_tsv(:file.read_line(d))
+        {kv_or_eof, d}
       end)
 
     Enum.map(many_devices, &:file.close(&1))
@@ -46,7 +64,35 @@ defmodule Compaction do
     {k, v}
   end
 
-  defp chug([{k, v, infile} | newer], acc) do
+  defp plug([], acc) do
+    acc
+  end
+
+  defp plug(batch, acc) when is_list(batch) do
+    {the_lowest_key, the_lowest_value} =
+      batch
+      |> Enum.filter(fn {kv_or_eof, d} -> kv_or_eof != :eof end)
+      |> Enum.map(fn {kv, d} -> kv end)
+      |> Sort.lowest()
+
+    next_round =
+      batch
+      |> Enum.map(fn {kv_or_eof, d} ->
+        case kv_or_eof do
+          :eof -> {:eof, d}
+          {k, _} when k == the_lowest_key -> {parse_tsv(:file.read_line(d)), d}
+          higher -> {higher, d}
+        end
+      end)
+
+    raise "hm"
+  end
+
+  defp chug([{{k, v}, infile} | newer], acc) do
+  end
+
+  defp chug([{:eof, infile} | tail], acc) do
+    chug(tail, [{:eof, infile} | acc])
   end
 
   defp chug([], acc) do
@@ -57,23 +103,5 @@ defmodule Compaction do
     # :file.read_line()  #  :eof bottom   etc
     raise "todo"
     # :file.write(output_sst, somebytes)
-  end
-
-  defmodule Sort do
-    def lowest([{k, v} | newer]) do
-      lowest([{k, v} | newer], {k, v})
-    end
-
-    def lowest([], {acc_k, acc_v}) do
-      {acc_k, acc_v}
-    end
-
-    def lowest([{next_k, next_v} | newer], {acc_k, acc_v}) do
-      if next_k <= acc_k do
-        lowest(newer, {next_k, next_v})
-      else
-        lowest(newer, {acc_k, acc_v})
-      end
-    end
   end
 end
