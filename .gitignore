@@ -41,5 +41,3 @@ commit.log
 # Backups of the commit log created
 # when Memtable.flush() runs
 *.bak
-# Intermediate merge files generated during SSTable compaction
-*.merge
