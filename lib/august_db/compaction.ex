@@ -11,16 +11,24 @@ defmodule Compaction do
   end
 
   defp merge(older_path, newer_path) do
+    output_path = "#{hd(String.split(newer_path, ".sst"))}.merge"
+
     older_sst = :file.open(older_path, [:read, :binary, {:read_ahead, 100_000}])
     newer_sst = :file.open(newer_path, [:read, :binary, {:read_ahead, 100_000}])
+    output_sst = :file.open(output_path, [:append])
 
     raise "merge them"
-    raise "think carefully about the paths of the intermediate merge files"
 
     :file.close(older_sst)
     :file.close(newer_sst)
-    raise "close output  file"
+    :file.close(output_sst)
 
-    raise "return the path of the output file"
+    # return the path of the output file
+    output_path
+  end
+
+  defp keep_merging(output_sst) do
+    raise "todo"
+    # :file.write(output_sst, somebytes)
   end
 end
