@@ -64,11 +64,8 @@ defmodule Compaction do
     {k, v}
   end
 
-  defp plug([], acc) do
-    acc
-  end
-
-  defp plug(batch, acc) when is_list(batch) do
+  defp plug(batch, outfile) when is_list(batch) do
+    # this could fail
     {the_lowest_key, the_lowest_value} =
       batch
       |> Enum.filter(fn {kv_or_eof, d} -> kv_or_eof != :eof end)
