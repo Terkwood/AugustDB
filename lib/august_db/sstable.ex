@@ -3,10 +3,10 @@ NimbleCSV.define(SSTableParser, separator: "\t", escape: "\"")
 defmodule SSTable do
   defstruct [:index, :table]
 
-  @csv_header [["k", "v"]]
+  @csv_header TSV.header_kv()
   @csv_header_string TSV.header_string()
-  @csv_header_bytes 4
-  @csv_row_separator "\n"
+  @csv_header_bytes TSV.header_bytes()
+  @csv_row_separator TSV.row_separator()
   @tombstone_string Tombstone.string()
 
   @doc """

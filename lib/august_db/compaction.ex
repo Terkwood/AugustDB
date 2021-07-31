@@ -42,10 +42,14 @@ defmodule Compaction do
     raise "merge them"
 
     many_kv_devices =
-      Enum.map(many_devices, fn d ->
+      many_devices
+      |> Enum.map(fn d ->
         kv_or_eof = parse_tsv(:file.read_line(d))
         {kv_or_eof, d}
       end)
+      |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end)
+
+    plug(many_kv_devices, output_sst)
 
     Enum.map(many_devices, &:file.close(&1))
     :file.close(output_sst)
@@ -64,13 +68,17 @@ defmodule Compaction do
     {k, v}
   end
 
+  defp plug([], outfile) do
+    nil
+  end
+
   defp plug(batch, outfile) when is_list(batch) do
-    # this could fail
     {the_lowest_key, the_lowest_value} =
       batch
-      |> Enum.filter(fn {kv_or_eof, d} -> kv_or_eof != :eof end)
       |> Enum.map(fn {kv, d} -> kv end)
       |> Sort.lowest()
+
+    # output should be a TSV stream
 
     next_round =
       batch
