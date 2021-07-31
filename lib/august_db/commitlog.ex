@@ -35,4 +35,15 @@ defmodule CommitLog do
     end)
     |> Stream.run()
   end
+
+  def backup() do
+    output_path = "#{@log_file}.#{:erlang.system_time()}.bak"
+    File.copy!(@log_file, output_path)
+    output_path
+  end
+
+  def new() do
+    File.rm!(@log_file)
+    File.touch!(@log_file)
+  end
 end
