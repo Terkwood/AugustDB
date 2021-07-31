@@ -67,20 +67,13 @@ defmodule Memtable do
     time_name = "#{:erlang.system_time()}"
 
     table_fname = "#{time_name}.sst"
-
     table_file_stream = File.stream!(table_fname)
-
     table_stream = sstable.table
-
     table_stream |> Stream.into(table_file_stream) |> Stream.run()
 
     index_binary = :erlang.term_to_binary(sstable.index)
-
-    index_stream = Stream.cycle([index_binary]) |> Stream.take(1)
-
-    index_file_stream = File.stream!("#{time_name}.idx")
-
-    index_stream |> Stream.into(index_file_stream) |> Stream.run()
+    index_path = "#{time_name}.idx"
+    File.write!(index_path, index_binary)
 
     # Finished.  Clear the flushing table state.
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
