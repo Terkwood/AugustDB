@@ -10,17 +10,17 @@ defmodule Compaction do
     raise "todo"
   end
 
-  defp merge(older_path, newer_path) do
-    output_path = "#{hd(String.split(newer_path, ".sst"))}.merge"
+  defp merge(many_paths) when is_list(many_paths) do
+    output_path = "#{:erlang.system_time()}.sst"
 
-    older_sst = :file.open(older_path, [:read, :binary, {:read_ahead, 100_000}])
-    newer_sst = :file.open(newer_path, [:read, :binary, {:read_ahead, 100_000}])
+    many_devices =
+      Enum.map(many_paths, fn p -> :file.open(p, [:read, :binary, {:read_ahead, 100_000}]) end)
+
     output_sst = :file.open(output_path, [:append])
 
     raise "merge them"
 
-    :file.close(older_sst)
-    :file.close(newer_sst)
+    Enum.map(many_devices, &:file.close(&1))
     :file.close(output_sst)
 
     # return the path of the output file
@@ -31,5 +31,23 @@ defmodule Compaction do
     # :file.read_line()  #  :eof bottom   etc
     raise "todo"
     # :file.write(output_sst, somebytes)
+  end
+
+  defmodule Sort do
+    def lowest([{k, v} | newer]) do
+      lowest([{k, v} | newer], {k, v})
+    end
+
+    def lowest([], {acc_k, acc_v}) do
+      {acc_k, acc_v}
+    end
+
+    def lowest([{next_k, next_v} | newer], {acc_k, acc_v}) do
+      if next_k <= acc_k do
+        lowest(newer, {next_k, next_v})
+      else
+        lowest(newer, {acc_k, acc_v})
+      end
+    end
   end
 end
