@@ -68,7 +68,6 @@ defmodule Compaction do
 
   @tsv_header_string TSV.header_string()
   def parse_tsv({:ok, line}) do
-    IO.inspect(line)
     [[k, v]] = SSTableParser.parse_string(@tsv_header_string <> line)
     {k, v}
   end
@@ -77,32 +76,26 @@ defmodule Compaction do
     nil
   end
 
-  defp plug(batch, outfile) when is_list(batch) do
-    case batch do
-      [] ->
-        nil
+  defp plug(many, outfile) when is_list(many) do
+    {the_lowest_key, the_lowest_value} =
+      many
+      |> Enum.map(fn {kv, _d} -> kv end)
+      |> Sort.lowest()
 
-      many ->
-        {the_lowest_key, the_lowest_value} =
-          many
-          |> Enum.map(fn {kv, _d} -> kv end)
-          |> Sort.lowest()
+    # output should be a TSV stream
+    next_line_out = SSTableParser.dump_to_iodata([[the_lowest_key, the_lowest_value]])
+    :file.write(outfile, next_line_out)
 
-        # output should be a TSV stream
-        next_line_out = SSTableParser.dump_to_iodata([[the_lowest_key, the_lowest_value]])
-        :file.write(outfile, next_line_out)
+    next_round =
+      many
+      |> Enum.map(fn {kv_or_eof, d} ->
+        case kv_or_eof do
+          :eof -> {:eof, d}
+          {k, _} when k == the_lowest_key -> {parse_tsv(:file.read_line(d)), d}
+          higher -> {higher, d}
+        end
+      end)
 
-        next_round =
-          many
-          |> Enum.map(fn {kv_or_eof, d} ->
-            case kv_or_eof do
-              :eof -> {:eof, d}
-              {k, _} when k == the_lowest_key -> {parse_tsv(:file.read_line(d)), d}
-              higher -> {higher, d}
-            end
-          end)
-
-        next_round |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end) |> plug(outfile)
-    end
+    next_round |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end) |> plug(outfile)
   end
 end
