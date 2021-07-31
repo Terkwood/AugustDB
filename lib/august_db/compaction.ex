@@ -7,7 +7,15 @@ defmodule Compaction do
   Run compaction on all SSTables, generating an SST and an IDX file
   """
   def run do
-    merge(Enum.sort(Path.wildcard("*.sst")))
+    old_sst_paths = Enum.sort(Path.wildcard("*.sst"))
+    new_sst_idx = merge(old_sst_paths)
+
+    for p <- old_sst_paths do
+      File.rm!(p)
+      File.rm!(hd(String.split(p, ".sst")) <> ".idx")
+    end
+
+    new_sst_idx
   end
 
   defmodule Sort do
