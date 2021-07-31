@@ -79,18 +79,18 @@ defmodule SSTable do
   Combined with Memtable
 
   ```elixir
-  iex(3)> Memtable.update("bar","BAZ"); Memtable.delete("foo"); Memtable.flush()
+  Memtable.update("bar","BAZ"); Memtable.delete("foo"); Memtable.flush()
   :ok
-  iex(4)> SSTable.query_all("bar")
+  SSTable.query_all("bar")
   "BAZ"
-  iex(5)> SSTable.query_all("foo")
+  SSTable.query_all("foo")
   :tombstone
-  iex(6)> SSTable.query_all("a")
+  SSTable.query_all("a")
   :none
   ```
   """
   def query_all(key) do
-    sst_files = Path.wildcard("*.sst")
+    sst_files = Path.wildcard("*.sst") |> Enum.sort() |> Enum.reverse()
     query_all(key, sst_files)
   end
 
