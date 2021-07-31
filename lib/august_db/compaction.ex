@@ -15,6 +15,7 @@ defmodule Compaction do
     newer_sst = :file.open(newer_path, [:read, :binary, {:read_ahead, 100_000}])
 
     raise "merge them"
+    raise "think carefully about the paths of the intermediate merge files"
 
     :file.close(older_sst)
     :file.close(newer_sst)
