@@ -10,9 +10,9 @@ defmodule Compaction do
     raise "todo"
   end
 
-  defp merge(older_path, _newer_path) do
+  defp merge(older_path, newer_path) do
     older_sst = :file.open(older_path, [:read, :binary, {:read_ahead, 100_000}])
-    newer_sst = :file.open(older_path, [:read, :binary, {:read_ahead, 100_000}])
+    newer_sst = :file.open(newer_path, [:read, :binary, {:read_ahead, 100_000}])
 
     raise "merge them"
 
