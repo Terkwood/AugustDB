@@ -41,7 +41,7 @@ defmodule SSTable do
     {index, _acc} =
       Enum.map_reduce(rlens, @csv_header_bytes, fn {key, l}, acc -> {{key, acc}, acc + l} end)
 
-    %__MODULE__{index: index, table: Stream.concat(csv_header, csv_stream)}
+    %__MODULE__{index: Map.new(index), table: Stream.concat(csv_header, csv_stream)}
   end
 
   def from(memtable) do
@@ -85,7 +85,7 @@ defmodule SSTable do
   "BAZ"
   iex(5)> SSTable.query_all("foo")
   :tombstone
-  iex(6)> SSTable.query("a")
+  iex(6)> SSTable.query_all("a")
   :none
   ```
   """
@@ -113,9 +113,9 @@ defmodule SSTable do
     index = :erlang.binary_to_term(index_bin)
 
     maybe_offset =
-      case Enum.find(index, fn {a, _offset} -> a == key end) do
+      case Map.get(index, key) do
         nil -> :none
-        {_, offset} -> offset
+        offset -> offset
       end
 
     maybe_value =
