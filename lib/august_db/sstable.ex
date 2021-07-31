@@ -131,8 +131,10 @@ defmodule SSTable do
     end
   end
 
+  @seek_bytes 64
+  @read_ahead_bytes @seek_bytes * 1000
   defp seek(file_name, offset) do
-    {:ok, file} = :file.open(file_name, [:read, :binary])
+    {:ok, file} = :file.open(file_name, [:read, :binary, {:read_ahead, @read_ahead_bytes}])
     out = SSTableParser.parse_string(@csv_header_string <> keep_reading(file, offset))
     :file.close(file)
 
@@ -142,7 +144,6 @@ defmodule SSTable do
     end
   end
 
-  @seek_bytes 64
   defp keep_reading(file, from, acc \\ "") do
     case :file.pread(file, from, @seek_bytes) do
       {:ok, data} ->
