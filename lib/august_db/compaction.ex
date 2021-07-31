@@ -14,17 +14,43 @@ defmodule Compaction do
     output_path = "#{:erlang.system_time()}.sst"
 
     many_devices =
-      Enum.map(many_paths, fn p -> :file.open(p, [:read, :binary, {:read_ahead, 100_000}]) end)
+      Enum.map(many_paths, fn p ->
+        {:ok, f} = :file.open(p, [:read, :binary, {:read_ahead, 100_000}])
+        f
+      end)
 
-    output_sst = :file.open(output_path, [:append])
+    {:ok, output_sst} = :file.open(output_path, [:append])
 
     raise "merge them"
+
+    many_kv_devices =
+      Enum.map(many_devices, fn d ->
+        {k, v} = parse_tsv(:file.read_line(d))
+        {k, v, d}
+      end)
 
     Enum.map(many_devices, &:file.close(&1))
     :file.close(output_sst)
 
     # return the path of the output file
     output_path
+  end
+
+  def parse_tsv(:eof) do
+    :eof
+  end
+
+  @tsv_header_string "k\tv\n"
+  def parse_tsv(line) do
+    [k, v] = SSTableParser.parse_string(@tsv_header_string <> line)
+    {k, v}
+  end
+
+  defp chug([{k, v, infile} | newer], acc) do
+  end
+
+  defp chug([], acc) do
+    acc
   end
 
   defp keep_merging(older_sst, newer_sst, output_sst) do
