@@ -27,7 +27,8 @@ defmodule Compaction do
     output_path
   end
 
-  defp keep_merging(output_sst) do
+  defp keep_merging(older_sst, newer_sst, output_sst) do
+    # :file.read_line()  #  :eof bottom   etc
     raise "todo"
     # :file.write(output_sst, somebytes)
   end
