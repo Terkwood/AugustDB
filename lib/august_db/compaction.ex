@@ -60,10 +60,8 @@ defmodule Compaction do
     :file.close(output_sst)
 
     index_binary = :erlang.term_to_binary(index)
-    index_stream = Stream.cycle([index_binary]) |> Stream.take(1)
     index_path = "#{time_name}.idx"
-    index_file_stream = File.stream!(index_path)
-    index_stream |> Stream.into(index_file_stream) |> Stream.run()
+    File.write!(index_path, index_binary)
 
     # return the path to the output file, and the path to the index file
     {output_path, index_path}

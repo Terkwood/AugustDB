@@ -74,12 +74,11 @@ defmodule Memtable do
 
     table_stream |> Stream.into(table_file_stream) |> Stream.run()
 
+    # This can be replaced with a simple File.write! as
+    # in Compaction.merge ... Stream doesn't help here
     index_binary = :erlang.term_to_binary(sstable.index)
-
     index_stream = Stream.cycle([index_binary]) |> Stream.take(1)
-
     index_file_stream = File.stream!("#{time_name}.idx")
-
     index_stream |> Stream.into(index_file_stream) |> Stream.run()
 
     # Finished.  Clear the flushing table state.
