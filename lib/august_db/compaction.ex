@@ -9,4 +9,10 @@ defmodule Compaction do
   def run do
     raise "todo"
   end
+
+  defp merge(_older, _newer) do
+    raise "todo"
+
+    raise "return the path of the output file"
+  end
 end
