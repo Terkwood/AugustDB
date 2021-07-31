@@ -28,6 +28,10 @@ defmodule Compaction do
     end
   end
 
+  def merge() do
+    merge(Enum.sort(Path.wildcard("*.sst")))
+  end
+
   defp merge(many_paths) when is_list(many_paths) do
     output_path = "#{:erlang.system_time()}.sst"
 
@@ -38,8 +42,6 @@ defmodule Compaction do
       end)
 
     {:ok, output_sst} = :file.open(output_path, [:append])
-
-    raise "merge them"
 
     many_kv_devices =
       many_devices
@@ -68,46 +70,36 @@ defmodule Compaction do
     {k, v}
   end
 
-  defp plug([], outfile) do
+  defp plug([], _outfile) do
     nil
   end
 
   defp plug(batch, outfile) when is_list(batch) do
-    {the_lowest_key, the_lowest_value} =
-      batch
-      |> Enum.map(fn {kv, d} -> kv end)
-      |> Sort.lowest()
+    case batch do
+      [] ->
+        nil
 
-    # output should be a TSV stream
-    next_line_out = SSTableParser.dump_to_iodata()
+      many ->
+        {the_lowest_key, the_lowest_value} =
+          many
+          |> Enum.map(fn {kv, _d} -> kv end)
+          |> Sort.lowest()
 
-    next_round =
-      batch
-      |> Enum.map(fn {kv_or_eof, d} ->
-        case kv_or_eof do
-          :eof -> {:eof, d}
-          {k, _} when k == the_lowest_key -> {parse_tsv(:file.read_line(d)), d}
-          higher -> {higher, d}
-        end
-      end)
+        # output should be a TSV stream
+        next_line_out = SSTableParser.dump_to_iodata([[the_lowest_key, the_lowest_value]])
+        :file.write(outfile, next_line_out)
 
-    raise "hm"
-  end
+        next_round =
+          many
+          |> Enum.map(fn {kv_or_eof, d} ->
+            case kv_or_eof do
+              :eof -> {:eof, d}
+              {k, _} when k == the_lowest_key -> {parse_tsv(:file.read_line(d)), d}
+              higher -> {higher, d}
+            end
+          end)
 
-  defp chug([{{k, v}, infile} | newer], acc) do
-  end
-
-  defp chug([{:eof, infile} | tail], acc) do
-    chug(tail, [{:eof, infile} | acc])
-  end
-
-  defp chug([], acc) do
-    acc
-  end
-
-  defp keep_merging(older_sst, newer_sst, output_sst) do
-    # :file.read_line()  #  :eof bottom   etc
-    raise "todo"
-    # :file.write(output_sst, somebytes)
+        next_round |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end) |> plug(outfile)
+    end
   end
 end
