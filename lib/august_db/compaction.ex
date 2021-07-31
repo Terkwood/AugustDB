@@ -40,7 +40,7 @@ defmodule Compaction do
     :eof
   end
 
-  @tsv_header_string "k\tv\n"
+  @tsv_header_string TSV.header_string()
   def parse_tsv(line) do
     [k, v] = SSTableParser.parse_string(@tsv_header_string <> line)
     {k, v}

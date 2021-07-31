@@ -4,7 +4,7 @@ defmodule SSTable do
   defstruct [:index, :table]
 
   @csv_header [["k", "v"]]
-  @csv_header_string "k\tv\n"
+  @csv_header_string TSV.header_string()
   @csv_header_bytes 4
   @csv_row_separator "\n"
   @tombstone_string Tombstone.string()
