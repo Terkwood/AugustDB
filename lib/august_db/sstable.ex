@@ -1,4 +1,4 @@
-NimbleCSV.define(SSTableParser, separator: "\t", escape: "\"")
+NimbleCSV.define(SSTableParser, separator: TSV.col_separator(), escape: "\"")
 
 defmodule SSTable do
   defstruct [:index, :table]

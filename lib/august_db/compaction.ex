@@ -79,6 +79,7 @@ defmodule Compaction do
       |> Sort.lowest()
 
     # output should be a TSV stream
+    next_line_out = SSTableParser.dump_to_iodata()
 
     next_round =
       batch
