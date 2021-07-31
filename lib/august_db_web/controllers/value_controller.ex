@@ -9,10 +9,38 @@ defmodule AugustDbWeb.ValueController do
   """
   def show(conn, %{"id" => key}) do
     case Memtable.query(key) do
-      {:value, data, _time} when is_binary(data) -> render(conn, "show.json", %{value: data})
-      {:value, _data, _time} -> send_resp(conn, 422, "Binary data cannot be displayed")
-      _ -> send_resp(conn, 404, "")
+      {:value, data, _time} when is_binary(data) ->
+        render(conn, "show.json", %{value: data})
+
+      {:value, _data, _time} ->
+        send_422(conn)
+
+      {:tombstone, _time} ->
+        send_404(conn)
+
+      :none ->
+        case SSTable.query_all(key) do
+          :tombstone ->
+            send_404(conn)
+
+          :none ->
+            send_404(conn)
+
+          value when is_binary(value) ->
+            render(conn, "show.json", %{value: value})
+
+          _ ->
+            send_422(conn)
+        end
     end
+  end
+
+  defp send_404(conn) do
+    send_resp(conn, 404, "")
+  end
+
+  defp send_422(conn) do
+    send_resp(conn, 422, "Binary data cannot be displayed")
   end
 
   @doc """
