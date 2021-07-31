@@ -67,7 +67,7 @@ defmodule Compaction do
     Enum.map(many_devices, &:file.close(&1))
     :file.close(output_sst)
 
-    index_binary = :erlang.term_to_binary(index)
+    index_binary = :erlang.term_to_binary(Map.new(index))
     index_path = "#{time_name}.idx"
     File.write!(index_path, index_binary)
 
