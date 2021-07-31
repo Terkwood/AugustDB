@@ -104,7 +104,7 @@ defmodule Compaction do
     |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end)
     |> plug(
       outfile,
-      byte_size(IO.iodata_to_binary(next_line_out)),
+      byte_size(IO.iodata_to_binary(next_line_out)) + index_bytes,
       [{the_lowest_key, index_bytes} | index]
     )
   end
