@@ -46,6 +46,8 @@ defmodule Compaction do
     many_kv_devices =
       many_devices
       |> Enum.map(fn d ->
+        # skip the header line
+        :file.read_line(d)
         kv_or_eof = parse_tsv(:file.read_line(d))
         {kv_or_eof, d}
       end)
@@ -66,7 +68,8 @@ defmodule Compaction do
 
   @tsv_header_string TSV.header_string()
   def parse_tsv({:ok, line}) do
-    [k, v] = SSTableParser.parse_string(@tsv_header_string <> line)
+    IO.inspect(line)
+    [[k, v]] = SSTableParser.parse_string(@tsv_header_string <> line)
     {k, v}
   end
 
