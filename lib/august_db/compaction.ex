@@ -4,10 +4,10 @@ defmodule Compaction do
   """
 
   @doc """
-  Run compaction on all SSTables
+  Run compaction on all SSTables, generating an SST and an IDX file
   """
   def run do
-    raise "todo"
+    merge(Enum.sort(Path.wildcard("*.sst")))
   end
 
   defmodule Sort do
@@ -28,10 +28,7 @@ defmodule Compaction do
     end
   end
 
-  def merge() do
-    merge(Enum.sort(Path.wildcard("*.sst")))
-  end
-
+  @tsv_header_string TSV.header_string()
   defp merge(many_paths) when is_list(many_paths) do
     output_path = "#{:erlang.system_time()}.sst"
 
@@ -53,7 +50,7 @@ defmodule Compaction do
       end)
       |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end)
 
-    plug(many_kv_devices, output_sst)
+    plug(many_kv_devices, output_sst, [], byte_size(@tsv_header_string))
 
     Enum.map(many_devices, &:file.close(&1))
     :file.close(output_sst)
@@ -72,11 +69,11 @@ defmodule Compaction do
     {k, v}
   end
 
-  defp plug([], _outfile) do
-    nil
+  defp plug([], outfile, index, _) do
+    {outfile, index}
   end
 
-  defp plug(many, outfile) when is_list(many) do
+  defp plug(many, outfile, index, index_bytes) when is_list(many) do
     {the_lowest_key, the_lowest_value} =
       many
       |> Enum.map(fn {kv, _d} -> kv end)
@@ -96,6 +93,8 @@ defmodule Compaction do
         end
       end)
 
-    next_round |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end) |> plug(outfile)
+    next_round
+    |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end)
+    |> plug(outfile, [{the_lowest_key, index_bytes} | index], byte_size(next_line_out))
   end
 end
