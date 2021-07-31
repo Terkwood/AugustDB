@@ -30,7 +30,8 @@ defmodule Compaction do
 
   @tsv_header_string TSV.header_string()
   defp merge(many_paths) when is_list(many_paths) do
-    output_path = "#{:erlang.system_time()}.sst"
+    time_name = :erlang.system_time()
+    output_path = "#{time_name}.sst"
 
     many_devices =
       Enum.map(many_paths, fn p ->
@@ -50,13 +51,19 @@ defmodule Compaction do
       end)
       |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end)
 
-    plug(many_kv_devices, output_sst, [], byte_size(@tsv_header_string))
+    index = plug(many_kv_devices, output_sst, byte_size(@tsv_header_string), [])
 
     Enum.map(many_devices, &:file.close(&1))
     :file.close(output_sst)
 
-    # return the path of the output file
-    output_path
+    index_binary = :erlang.term_to_binary(index)
+    index_stream = Stream.cycle([index_binary]) |> Stream.take(1)
+    index_path = "#{time_name}.idx"
+    index_file_stream = File.stream!(index_path)
+    index_stream |> Stream.into(index_file_stream) |> Stream.run()
+
+    # return the path to the output file, and the path to the index file
+    {output_path, index_path}
   end
 
   def parse_tsv(:eof) do
@@ -69,11 +76,11 @@ defmodule Compaction do
     {k, v}
   end
 
-  defp plug([], outfile, index, _) do
-    {outfile, index}
+  defp plug([], _outfile, _index_bytes, index) do
+    index
   end
 
-  defp plug(many, outfile, index, index_bytes) when is_list(many) do
+  defp plug(many, outfile, index_bytes, index) when is_list(many) do
     {the_lowest_key, the_lowest_value} =
       many
       |> Enum.map(fn {kv, _d} -> kv end)
@@ -95,6 +102,10 @@ defmodule Compaction do
 
     next_round
     |> Enum.filter(fn {kv_or_eof, _d} -> kv_or_eof != :eof end)
-    |> plug(outfile, [{the_lowest_key, index_bytes} | index], byte_size(next_line_out))
+    |> plug(
+      outfile,
+      byte_size(IO.iodata_to_binary(next_line_out)),
+      [{the_lowest_key, index_bytes} | index]
+    )
   end
 end
