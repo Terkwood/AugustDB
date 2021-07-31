@@ -41,6 +41,9 @@ defmodule Compaction do
 
     {:ok, output_sst} = :file.open(output_path, [:append])
 
+    # write header
+    :ok = :file.write(output_sst, @tsv_header_string)
+
     many_kv_devices =
       many_devices
       |> Enum.map(fn d ->
