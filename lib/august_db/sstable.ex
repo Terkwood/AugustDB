@@ -27,13 +27,15 @@ defmodule SSTable do
         end
       end
 
-    kvs = Enum.filter(maybe_kvs, &(&1 != nil))
+    kvs = Enum.filter(maybe_kvs, &(&1 != nil)) |> Enum.flat_map(fn x -> x end)
+
+    IO.inspect(kvs)
 
     time_name = "#{:erlang.system_time()}"
 
     table_fname = "#{time_name}.sst"
 
-    sst_out_file = :file.open(table_fname, [:raw, :append])
+    {:ok, sst_out_file} = :file.open(table_fname, [:raw, :append])
 
     idx = kvs |> write_binary_idx(sst_out_file)
     IO.inspect(idx)
