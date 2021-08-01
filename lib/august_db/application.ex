@@ -11,8 +11,14 @@ defmodule AugustDb.Application do
       {Memtable, %Memtable{}},
       # Start Memtable Size tracker
       Memtable.Sizer,
-      # Replay the CommitLog
-      {Task, fn -> CommitLog.replay() end},
+      # Replay the CommitLog into memory, then flush it to disk
+      # This lets us recover from crashes and makes sure
+      # the data is written to SSTable
+      {Task,
+       fn ->
+         CommitLog.replay()
+         Memtable.flush()
+       end},
       # Start periodic SSTable compaction
       Compaction.Periodic,
       # Start the Telemetry supervisor
