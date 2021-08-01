@@ -44,6 +44,8 @@ defmodule Compaction do
   defmodule Periodic do
     use GenServer
 
+    @compaction_period_minutes 1
+
     def start_link(_opts) do
       GenServer.start_link(__MODULE__, %{})
     end
@@ -66,8 +68,7 @@ defmodule Compaction do
     end
 
     defp schedule_work() do
-      # In 5 sec
-      Process.send_after(self(), :work, 5 * 1000)
+      Process.send_after(self(), :work, @compaction_period_minutes * 60 * 1000)
     end
   end
 
