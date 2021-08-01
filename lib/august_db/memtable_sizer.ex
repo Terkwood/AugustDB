@@ -5,7 +5,7 @@ defmodule Memtable.Sizer do
     defstruct total_size: 0, size_per_key: %{}
   end
 
-  def start_link(_opts) do
+  def start_link(_) do
     GenServer.start_link(__MODULE__, %State{})
   end
 
