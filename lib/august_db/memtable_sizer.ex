@@ -30,7 +30,7 @@ defmodule Memtable.Sizer do
      %State{total_size: new_total_size, sizes: Map.put(state.sizes, key, kv_size)}}
   end
 
-  def handle_cast(:clear) do
+  def handle_cast(:clear, _state) do
     {:noreply, %State{}}
   end
 
