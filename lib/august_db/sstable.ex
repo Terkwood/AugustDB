@@ -19,8 +19,9 @@ defmodule SSTable do
       ???
   """
   def dump(keyvals) when is_list(keyvals) do
-    kv_bins = keyvals |> to_binary
+    kv_bin_idxs = keyvals |> to_binary_idx
 
+    IO.inspect(kv_bin_idxs)
     raise "todo"
     raise "the values can be tombstone atoms"
   end
@@ -40,7 +41,27 @@ defmodule SSTable do
     dump(kvs)
   end
 
-  defp to_binary(kvts) do
-    raise "todo"
+  @tombstone -1
+  defp to_binary_idx([{key, value} | rest], acc \\ {0, <<>>, %{}}) do
+    ks = byte_size(key)
+
+    segment =
+      case value do
+        :tombstone ->
+          <<ks::64>> <> <<@tombstone::64>> <> key
+
+        bin when is_binary(bin) ->
+          vs = byte_size(bin)
+          <<ks::64, vs::64>> <> key <> bin
+      end
+
+    {al, ab, idx} = acc
+    next_len = al + byte_size(segment)
+
+    to_binary_idx(rest, {next_len, ab <> segment, Map.put(idx, key, al)})
+  end
+
+  defp to_binary_idx([], {_byte_pos, bin, idx}) do
+    {bin, idx}
   end
 end
