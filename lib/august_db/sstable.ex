@@ -92,6 +92,7 @@ defmodule SSTable do
     end
   end
 
+  @length_bytes 8
   defp query(key, sst_file_or_timestamp) do
     file_timestamp = hd(String.split("#{sst_file_or_timestamp}", ".sst"))
 
@@ -112,15 +113,19 @@ defmodule SSTable do
         {:ok, sst} = :file.open("#{file_timestamp}.sst", [:read, :raw])
 
         out =
-          case :file.pread(sst, offset, 8) do
-            {:ok, <<key_len::32, value_len::32>>} ->
+          case :file.pread(sst, offset, @length_bytes) do
+            {:ok, l} ->
+              <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
+
+              IO.inspect({key_len, value_len})
+
               case value_len do
                 @tombstone ->
                   :tombstone
 
                 vl ->
-                  {:ok, value_bits} = :file.pread(sst, offset + key_len, vl)
-                  value_bits
+                  {:ok, value_bin} = :file.pread(sst, offset + @length_bytes + key_len, vl)
+                  :erlang.iolist_to_binary(value_bin)
               end
 
             :eof ->
