@@ -32,6 +32,10 @@ defmodule Memtable do
         flushing: flushing
       }
     end)
+
+    Memtable.Sizer.resize(key, value)
+
+    :ok
   end
 
   def delete(key) do
@@ -41,6 +45,10 @@ defmodule Memtable do
         flushing: flushing
       }
     end)
+
+    Memtable.Sizer.remove(key)
+
+    :ok
   end
 
   def flush() do

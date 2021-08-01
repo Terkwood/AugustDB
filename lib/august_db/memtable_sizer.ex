@@ -34,11 +34,23 @@ defmodule Memtable.Sizer do
     {:noreply, %State{}}
   end
 
-  def resize(key, kv_size) when is_binary(key) and is_integer(kv_size) do
+  def resize(key, value) when is_binary(key) and is_binary(value) do
+    kv_size = byte_size(key) + byte_size(value)
+
+    update(key, kv_size)
+  end
+
+  def remove(key) when is_binary(key) do
+    update(key, 0)
+  end
+
+  defp update(key, kv_size) do
     new_total_size = GenServer.call(MemtableSizer, {:resize, key, kv_size})
 
     if new_total_size > @max_size_bytes do
+      IO.puts("... clearing memtable ..")
       Memtable.flush()
+      __MODULE__.clear()
     end
   end
 
