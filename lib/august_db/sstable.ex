@@ -19,6 +19,8 @@ defmodule SSTable do
       ???
   """
   def dump(keyvals) when is_list(keyvals) do
+    kv_bins = keyvals |> to_binary
+
     raise "todo"
     raise "the values can be tombstone atoms"
   end
@@ -36,5 +38,9 @@ defmodule SSTable do
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
 
     dump(kvs)
+  end
+
+  defp to_binary(kvts) do
+    raise "todo"
   end
 end
