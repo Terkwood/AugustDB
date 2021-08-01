@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.1](https://github.com/Terkwood/AugustDB/compare/v0.1.0...v0.1.1) (2021-08-01)
+
+
+### Features
+
+* touch commit log on startup ([#67](https://github.com/Terkwood/AugustDB/issues/67)) ([c5d3043](https://github.com/Terkwood/AugustDB/commit/c5d304325d47d3c3b919454f01fa4df43a2a8fe2))
+
 ## 0.1.0 (2021-08-01)
 
 
