@@ -15,7 +15,7 @@ defmodule Memtable.Sizer do
     {:ok, state}
   end
 
-  def handle_call({:resize, key, kv_size}, state) do
+  def handle_call({:resize, key, kv_size}, _from, state) do
     old_kv_size =
       case Map.get(state.sizes, key) do
         nil -> 0
