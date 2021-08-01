@@ -32,7 +32,7 @@ ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix
 
 ## REST API examples
 
-We haven't written any docs yet. But you can see some examples using curl [in value_controller.ex](https://github.com/Terkwood/AugustDB/blob/main/lib/august_db_web/controllers/value_controller.ex).
+You can see some examples using curl [in value_controller.ex](https://github.com/Terkwood/AugustDB/blob/main/lib/august_db_web/controllers/value_controller.ex).
 
 ## Generating docs
 
