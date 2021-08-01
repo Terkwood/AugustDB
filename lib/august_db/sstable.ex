@@ -1,6 +1,8 @@
 defmodule SSTable do
+  defstruct [:index, :table]
+
   @doc """
-  Dump a list of key/value pairs to an IO-ready binary stream, accompanied by an index of offsets.
+  Dump a list of key/value pairs to binary, accompanied by an index of offsets.
 
   ## Example
 
@@ -13,15 +15,26 @@ defmodule SSTable do
       }
 
       iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
-      iex> raise "todo"
-      iex> IO.iodata_to_binary(Enum.to_list(them.table))
+      iex> them.table
       ???
   """
   def dump(keyvals) when is_list(keyvals) do
     raise "todo"
+    raise "the values can be tombstone atoms"
   end
 
   def from(memtable) do
-    raise "todo"
+    maybe_kvs =
+      for entry <- :gb_trees.to_list(memtable) do
+        case entry do
+          {key, {:value, value, _time}} -> [key, value]
+          {key, {:tombstone, _time}} -> [key, :tombstone]
+          _ -> nil
+        end
+      end
+
+    kvs = Enum.filter(maybe_kvs, &(&1 != nil))
+
+    dump(kvs)
   end
 end
