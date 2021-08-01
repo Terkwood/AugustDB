@@ -22,6 +22,7 @@ defmodule CommitLog do
     hdr = Stream.cycle([@tsv_header_string]) |> Stream.take(1)
     log = File.stream!(@log_file, read_ahead: 100_000)
 
+    # sketchy
     Memtable.clear()
 
     Stream.concat(hdr, log)
