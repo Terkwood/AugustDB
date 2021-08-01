@@ -11,6 +11,8 @@ defmodule AugustDb.Application do
       {Memtable, %Memtable{}},
       # Replay the CommitLog
       {Task, fn -> CommitLog.replay() end},
+      # Start periodic SSTable compaction
+      Compaction.Periodic,
       # Start the Telemetry supervisor
       AugustDbWeb.Telemetry,
       # Start the PubSub system
