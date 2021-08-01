@@ -45,9 +45,7 @@ defmodule Memtable.Sizer do
   end
 
   defp update(key, kv_size) do
-    IO.puts("hey")
     new_total_size = GenServer.call(MemtableSizer, {:resize, key, kv_size})
-    IO.puts("ho")
 
     if new_total_size > @max_size_bytes do
       IO.puts("... clearing memtable ..")
