@@ -117,8 +117,6 @@ defmodule SSTable do
             {:ok, l} ->
               <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
 
-              IO.inspect({key_len, value_len})
-
               case value_len do
                 @tombstone ->
                   :tombstone
