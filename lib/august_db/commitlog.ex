@@ -17,13 +17,13 @@ defmodule CommitLog do
     )
   end
 
+  @doc """
+  Replay all commit log values into the memtable.
+  """
   def replay() do
     # we need the header line so that NimbleCSV doesn't fail
     hdr = Stream.cycle([@tsv_header_string]) |> Stream.take(1)
     log = File.stream!(@log_file, read_ahead: 100_000)
-
-    # sketchy
-    Memtable.clear()
 
     Stream.concat(hdr, log)
     |> CommitLogParser.parse_stream()
@@ -41,6 +41,10 @@ defmodule CommitLog do
     output_path = "#{@log_file}.#{:erlang.system_time()}.bak"
     File.copy!(@log_file, output_path)
     output_path
+  end
+
+  def touch() do
+    File.touch!(@log_file)
   end
 
   def new() do
