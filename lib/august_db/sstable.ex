@@ -66,18 +66,21 @@ defmodule SSTable do
 
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
 
-    time_name = "#{:erlang.system_time()}"
-
-    table_fname = "#{time_name}.sst"
+    time = :erlang.system_time()
+    table_fname = new_filename(time)
 
     {:ok, sst_out_file} = :file.open(table_fname, [:raw, :append])
 
     idx = kvs |> write_binary_idx(sst_out_file)
 
-    index_path = "#{time_name}.idx"
+    index_path = "#{time}.idx"
     File.write!(index_path, :erlang.term_to_binary(idx))
 
     IO.puts("Dumped SSTable to #{table_fname}")
+  end
+
+  def new_filename(time_name \\ :erlang.system_time()) do
+    "#{time_name}.sst"
   end
 
   defp query_all(_key, []) do

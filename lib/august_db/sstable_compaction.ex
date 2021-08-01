@@ -23,9 +23,39 @@ defmodule SSTable.Compaction do
     end
   end
 
+  defmodule Periodic do
+    use GenServer
+
+    @compaction_period_minutes 1
+
+    def start_link(_opts) do
+      GenServer.start_link(__MODULE__, %{})
+    end
+
+    def init(state) do
+      # Schedule work to be performed at some point
+      schedule_work()
+      {:ok, state}
+    end
+
+    def handle_info(:work, state) do
+      case Compaction.run() do
+        {sst, _idx} -> IO.puts("Compacted #{sst}")
+        _ -> nil
+      end
+
+      # Reschedule once more
+      schedule_work()
+      {:noreply, state}
+    end
+
+    defp schedule_work() do
+      Process.send_after(self(), :work, @compaction_period_minutes * 60 * 1000)
+    end
+  end
+
   defp merge(many_paths) when is_list(many_paths) do
-    time_name = :erlang.system_time()
-    output_path = "#{time_name}.sst"
+    output_path = SSTable.new_filename()
 
     many_devices =
       Enum.map(many_paths, fn p ->
