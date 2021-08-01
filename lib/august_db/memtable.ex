@@ -25,7 +25,7 @@ defmodule Memtable do
     end
   end
 
-  def update(key, value) do
+  def update(key, value) when is_binary(key) and is_binary(value) do
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: flushing} ->
       %__MODULE__{
         current: :gb_trees.enter(key, {:value, value, System.monotonic_time()}, current),
