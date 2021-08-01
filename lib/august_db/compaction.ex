@@ -8,14 +8,19 @@ defmodule Compaction do
   """
   def run do
     old_sst_paths = Enum.sort(Path.wildcard("*.sst"))
-    new_sst_idx = merge(old_sst_paths)
 
-    for p <- old_sst_paths do
-      File.rm!(p)
-      File.rm!(hd(String.split(p, ".sst")) <> ".idx")
+    case merge(old_sst_paths) do
+      :noop ->
+        :noop
+
+      new_sst_idx ->
+        for p <- old_sst_paths do
+          File.rm!(p)
+          File.rm!(hd(String.split(p, ".sst")) <> ".idx")
+        end
+
+        new_sst_idx
     end
-
-    new_sst_idx
   end
 
   defmodule Sort do
@@ -34,6 +39,14 @@ defmodule Compaction do
         lowest(newer, {acc_k, acc_v})
       end
     end
+  end
+
+  defp merge([]) do
+    :noop
+  end
+
+  defp merge([_single_path]) do
+    :noop
   end
 
   @tsv_header_string TSV.header_string()
