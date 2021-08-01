@@ -2,7 +2,8 @@ defmodule SSTable do
   defstruct [:index, :table]
 
   @doc """
-  Dump a list of key/value pairs to binary, accompanied by an index of offsets.
+  Write a list of key/value pairs to binary SSTable file
+  Also write an index of offsets.
 
   ## Example
 
@@ -15,20 +16,10 @@ defmodule SSTable do
       }
 
       iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
-      iex> them.table
-      ???
   """
-  def dump(keyvals) when is_list(keyvals) do
-    {_payload, idx} = keyvals |> to_binary_idx
-
-    IO.inspect(idx)
-    raise "todo"
-    raise "the values can be tombstone atoms"
-  end
-
-  def from(memtable) do
+  def dump(gb_tree) do
     maybe_kvs =
-      for entry <- :gb_trees.to_list(memtable) do
+      for entry <- :gb_trees.to_list(gb_tree) do
         case entry do
           {key, {:value, value, _time}} -> [key, value]
           {key, {:tombstone, _time}} -> [key, :tombstone]
@@ -38,31 +29,43 @@ defmodule SSTable do
 
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
 
-    dump(kvs)
+    time_name = "#{:erlang.system_time()}"
+
+    table_fname = "#{time_name}.sst"
+
+    sst_out_file = :file.open(table_fname, [:raw, :append])
+
+    idx = kvs |> write_binary_idx(sst_out_file)
+    IO.inspect(idx)
+
+    index_path = "#{time_name}.idx"
+    File.write!(index_path, :erlang.term_to_binary(idx))
   end
 
-  defp to_binary_idx(pairs, acc \\ {0, <<>>, %{}})
+  defp write_binary_idx(pairs, device, acc \\ {0, %{}})
   @tombstone -1
-  defp to_binary_idx([{key, value} | rest], acc) do
+  defp write_binary_idx([{key, value} | rest], device, acc) do
     ks = byte_size(key)
 
     segment =
       case value do
         :tombstone ->
-          <<ks::64>> <> <<@tombstone::64>> <> key
+          IO.puts(device, <<ks::64>>)
+          IO.puts(device, <<@tombstone::64>>)
+          IO.puts(device, key)
 
         bin when is_binary(bin) ->
           vs = byte_size(bin)
           <<ks::64, vs::64>> <> key <> bin
       end
 
-    {al, ab, idx} = acc
+    {al, idx} = acc
     next_len = al + byte_size(segment)
 
-    to_binary_idx(rest, {next_len, ab <> segment, Map.put(idx, key, al)})
+    write_binary_idx(device, rest, {next_len, Map.put(idx, key, al)})
   end
 
-  defp to_binary_idx([], {_byte_pos, bin, idx}) do
-    {bin, idx}
+  defp write_binary_idx([], _device, {_byte_pos, idx}) do
+    idx
   end
 end
