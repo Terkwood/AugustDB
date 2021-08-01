@@ -2,7 +2,7 @@ defmodule Memtable.Sizer do
   use GenServer
 
   defmodule State do
-    defstruct total_size: 0, size_per_key: %{}
+    defstruct total_size: 0, kv_size: %{}
   end
 
   def start_link(_) do
