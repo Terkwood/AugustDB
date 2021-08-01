@@ -19,9 +19,9 @@ defmodule SSTable do
       ???
   """
   def dump(keyvals) when is_list(keyvals) do
-    kv_bin_idxs = keyvals |> to_binary_idx
+    {_payload, idx} = keyvals |> to_binary_idx
 
-    IO.inspect(kv_bin_idxs)
+    IO.inspect(idx)
     raise "todo"
     raise "the values can be tombstone atoms"
   end
@@ -41,8 +41,9 @@ defmodule SSTable do
     dump(kvs)
   end
 
+  defp to_binary_idx(pairs, acc \\ {0, <<>>, %{}})
   @tombstone -1
-  defp to_binary_idx([{key, value} | rest], acc \\ {0, <<>>, %{}}) do
+  defp to_binary_idx([{key, value} | rest], acc) do
     ks = byte_size(key)
 
     segment =
