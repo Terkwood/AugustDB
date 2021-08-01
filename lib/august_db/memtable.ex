@@ -25,13 +25,17 @@ defmodule Memtable do
     end
   end
 
-  def update(key, value) do
+  def update(key, value) when is_binary(key) and is_binary(value) do
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: flushing} ->
       %__MODULE__{
         current: :gb_trees.enter(key, {:value, value, System.monotonic_time()}, current),
         flushing: flushing
       }
     end)
+
+    Memtable.Sizer.resize(key, value)
+
+    :ok
   end
 
   def delete(key) do
@@ -41,6 +45,10 @@ defmodule Memtable do
         flushing: flushing
       }
     end)
+
+    Memtable.Sizer.remove(key)
+
+    :ok
   end
 
   def flush() do

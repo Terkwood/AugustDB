@@ -9,6 +9,8 @@ defmodule AugustDb.Application do
     children = [
       # Start the Memtable agent
       {Memtable, %Memtable{}},
+      # Start Memtable Size tracker
+      Memtable.Sizer,
       # Replay the CommitLog
       {Task, fn -> CommitLog.replay() end},
       # Start periodic SSTable compaction
