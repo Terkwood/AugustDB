@@ -54,6 +54,25 @@ defmodule SSTable.Compaction do
     end
   end
 
+  defmodule Sort do
+    @spec lowest([{any, any}, ...]) :: {any, any}
+    def lowest([{k, v} | newer]) do
+      lowest([{k, v} | newer], {k, v})
+    end
+
+    def lowest([], {acc_k, acc_v}) do
+      {acc_k, acc_v}
+    end
+
+    def lowest([{next_k, next_v} | newer], {acc_k, acc_v}) do
+      if next_k <= acc_k do
+        lowest(newer, {next_k, next_v})
+      else
+        lowest(newer, {acc_k, acc_v})
+      end
+    end
+  end
+
   defp merge(many_paths) when is_list(many_paths) do
     output_path = SSTable.new_filename()
 
