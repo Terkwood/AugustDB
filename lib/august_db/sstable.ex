@@ -1,6 +1,8 @@
 defmodule SSTable do
   defstruct [:index, :table]
 
+  @tombstone 4_294_967_296
+
   @doc """
   Query all SSTable files using their associated index file and a key,
   returning a value if present. Filters tombstone entries.
@@ -91,19 +93,56 @@ defmodule SSTable do
   end
 
   defp query(key, sst_file_or_timestamp) do
-    raise "todo"
+    file_timestamp = hd(String.split("#{sst_file_or_timestamp}", ".sst"))
+
+    {:ok, index_bin} = File.read("#{file_timestamp}.idx")
+    index = :erlang.binary_to_term(index_bin)
+
+    maybe_offset =
+      case Map.get(index, key) do
+        nil -> :none
+        offset -> offset
+      end
+
+    case maybe_offset do
+      :none ->
+        :none
+
+      offset ->
+        {:ok, sst} = :file.open("#{file_timestamp}.sst", [:read, :raw])
+
+        out =
+          case :file.pread(sst, offset, 8) do
+            {:ok, <<key_len::32, value_len::32>>} ->
+              case value_len do
+                @tombstone ->
+                  :tombstone
+
+                vl ->
+                  {:ok, value_bits} = :file.pread(sst, offset + key_len, vl)
+                  value_bits
+              end
+
+            :eof ->
+              :none
+          end
+
+        :file.close(sst)
+
+        out
+    end
   end
 
   defp write_binary_idx(pairs, device, acc \\ {0, %{}})
-  @tombstone -1
+
   defp write_binary_idx([{key, value} | rest], device, acc) do
     ks = byte_size(key)
 
     segment_size =
       case value do
         :tombstone ->
-          kl = <<ks::64>>
-          vl = <<@tombstone::64>>
+          kl = <<ks::32>>
+          vl = <<@tombstone::32>>
           :ok = :file.write(device, kl)
           :ok = :file.write(device, vl)
           :ok = :file.write(device, key)
@@ -111,7 +150,7 @@ defmodule SSTable do
 
         bin when is_binary(bin) ->
           vs = byte_size(bin)
-          kvl = <<ks::64, vs::64>>
+          kvl = <<ks::32, vs::32>>
           :ok = :file.write(device, kvl)
           :ok = :file.write(device, key)
           :ok = :file.write(device, bin)
