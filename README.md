@@ -8,9 +8,53 @@ This project is a work in progress 🚧 and is being developed primarily to suit
 
 Use gb_trees as memtable.
 
-Use nimble_csv to generate SSTable format.
+Define a binary SSTable format.
 
 Use phoenix to expose a REST API (PUT, GET, DEL).
+
+### SSTable Format
+
+This is the specification for [binary SSTables](https://github.com/Terkwood/AugustDB/issues/51).
+
+#### value records 
+
+1. Length of key in bytes
+2. Length of value in bytes
+3. Raw key, not escaped
+4. Raw value, not escaped
+
+#### tombstone records
+
+1. Length of key in bytes
+2. -1 to indicate tombstone
+3. Raw key, not escaped
+
+### Making HTTP calls
+
+Create a record
+
+```sh
+curl -X PUT  -d value='meh meh'  http://localhost:4000/api/values/1
+```
+
+Update a record
+```sh
+curl -X PUT  -d value='n0 n0'  http://localhost:4000/api/values/1
+```
+
+Get a record
+
+```sh
+curl  http://localhost:4000/api/values/1
+```
+
+Delete a record
+
+```sh
+curl -X DELETE http://localhost:4000/api/values/1
+```
+
+
 
 ## Notional distributed system
 

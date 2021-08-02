@@ -24,6 +24,7 @@ defmodule Compaction do
   end
 
   defmodule Sort do
+    @spec lowest([{any, any}, ...]) :: {any, any}
     def lowest([{k, v} | newer]) do
       lowest([{k, v} | newer], {k, v})
     end
