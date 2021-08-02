@@ -75,49 +75,50 @@ defmodule SSTable.Compaction do
     end
   end
 
-  def merge([]) do
-    :noop
-  end
-
-  defp merge([_single_path]) do
-    :noop
-  end
-
   @tombstone tombstone()
-  defp merge(many_paths) when is_list(many_paths) do
-    output_path = SSTable.new_filename()
+  defp merge(paths) when is_list(paths) do
+    case paths do
+      [] ->
+        :noop
 
-    many_devices =
-      Enum.map(many_paths, fn p ->
-        {:ok, f} = :file.open(p, [:read, :raw])
-        f
-      end)
+      [_one] ->
+        :noop
 
-    {:ok, output_sst} = :file.open(output_path, [:raw, :append])
+      many_paths ->
+        output_path = SSTable.new_filename()
 
-    many_kv_devices =
-      many_devices
-      |> Enum.map(&{&1, 0})
-      |> Enum.map(fn {device, offset} ->
-        read_one(device, offset)
-      end)
-      |> Enum.filter(fn maybe_eof ->
-        case maybe_eof do
-          :eof -> false
-          _ -> true
-        end
-      end)
+        many_devices =
+          Enum.map(many_paths, fn p ->
+            {:ok, f} = :file.open(p, [:read, :raw])
+            f
+          end)
 
-    index = compare_and_write(many_kv_devices, output_sst, 0, [])
+        {:ok, output_sst} = :file.open(output_path, [:raw, :append])
 
-    Enum.map(many_devices, &:file.close(&1))
-    :ok = :file.close(output_sst)
+        many_kv_devices =
+          many_devices
+          |> Enum.map(&{&1, 0})
+          |> Enum.map(fn {device, offset} ->
+            read_one(device, offset)
+          end)
+          |> Enum.filter(fn maybe_eof ->
+            case maybe_eof do
+              :eof -> false
+              _ -> true
+            end
+          end)
 
-    index_binary = :erlang.term_to_binary(Map.new(index))
-    index_path = hd(String.split(output_path, ".sst")) <> ".idx"
-    File.write!(index_path, index_binary)
+        index = compare_and_write(many_kv_devices, output_sst, 0, [])
 
-    {output_path, index_path}
+        Enum.map(many_devices, &:file.close(&1))
+        :ok = :file.close(output_sst)
+
+        index_binary = :erlang.term_to_binary(Map.new(index))
+        index_path = hd(String.split(output_path, ".sst")) <> ".idx"
+        File.write!(index_path, index_binary)
+
+        {output_path, index_path}
+    end
   end
 
   defp compare_and_write([], _outfile, _index_bytes, index) do
@@ -139,7 +140,7 @@ defmodule SSTable.Compaction do
       many_kv_devices_offsets
       |> Enum.map(fn {kv, d, offset} ->
         case kv do
-          {k, _} when k == the_lowest_key -> raise "read"
+          {k, _} when k == the_lowest_key -> read_one(d, offset)
           higher -> {higher, d, offset}
         end
       end)
