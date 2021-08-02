@@ -112,12 +112,14 @@ defmodule SSTable.Compaction do
 
                 case value_len do
                   @tombstone ->
-                    {{key, :tombstone}, device}
+                    next_offset = offset + kv_length_bytes() + key_len
+                    {{key, :tombstone}, device, next_offset}
 
                   vl ->
                     {:ok, value_data} = :file.pread(device, offset + kv_length_bytes(), vl)
                     value = IO.iodata_to_binary(value_data)
-                    {{key, value}, device}
+                    next_offset = offset + kv_length_bytes() + key_len + vl
+                    {{key, value}, device, next_offset}
                 end
 
               :eof ->
@@ -151,11 +153,11 @@ defmodule SSTable.Compaction do
 
   import SSTable.Write
 
-  defp compare_and_write(many_kv_devices, outfile, index_bytes, index)
-       when is_list(many_kv_devices) do
+  defp compare_and_write(many_kv_devices_offsets, outfile, index_bytes, index)
+       when is_list(many_kv_devices_offsets) do
     {the_lowest_key, the_lowest_value} =
-      many_kv_devices
-      |> Enum.map(fn {kv, _d} -> kv end)
+      many_kv_devices_offsets
+      |> Enum.map(fn {kv, _d, _offset} -> kv end)
       |> Sort.lowest()
 
     write_kv(the_lowest_key, the_lowest_value, outfile)
