@@ -141,7 +141,7 @@ defmodule SSTable.Compaction do
       |> Enum.map(fn {kv, d, offset} ->
         case kv do
           {k, _} when k == the_lowest_key -> read_one(d, offset)
-          higher -> {higher, d, offset}
+          higher -> {higher, d, offset + segment_size}
         end
       end)
 
