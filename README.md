@@ -73,11 +73,6 @@ ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix
 ```
 
 
-## 🔮 The Glorious Future: a distributed system
-
-~~First implement a local key-value store that uses a memtable, SSTables, and a commit log~~.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes. [See the issue tracker](https://github.com/Terkwood/AugustDB/issues/15).
-
-
 ## Generating docs
 
 You can [follow the CLI instructions for ExDoc](https://github.com/elixir-lang/ex_doc#using-exdoc-via-command-line):
@@ -98,3 +93,10 @@ To start your Phoenix server:
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+
+
+
+
+## 🔮 The Glorious Future: a distributed system
+
+~~First implement a local key-value store that uses a memtable, SSTables, and a commit log~~.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes. [See the issue tracker](https://github.com/Terkwood/AugustDB/issues/15).
