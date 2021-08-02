@@ -1,4 +1,6 @@
 defmodule SSTable.Compaction do
+  import SSTable.Settings
+
   @moduledoc """
   SSTable Compaction
   """
@@ -73,6 +75,14 @@ defmodule SSTable.Compaction do
     end
   end
 
+  def merge([]) do
+    :noop
+  end
+
+  defp merge([_single_path]) do
+    :noop
+  end
+
   defp merge(many_paths) when is_list(many_paths) do
     output_path = SSTable.new_filename()
 
@@ -83,6 +93,41 @@ defmodule SSTable.Compaction do
       end)
 
     {:ok, output_sst} = :file.open(output_path, [:raw, :append])
+
+    #    indices =
+    #      many_paths
+    ##      |> Enum.map(fn p ->
+    #      hd(String.split(p, ".sst"))
+    #   end)
+    #  |> Enum.map(fn timestamp -> :erlang.binary_to_term(File.read!("#{timestamp}.idx")) end)
+
+    many_kv_devices =
+      many_devices
+      |> Enum.map(&{&1, 0})
+      |> Enum.map(fn {device, offset} ->
+        case :file.pread(device, offset, kv_length_bytes) do
+          :eof ->
+            {:eof, d}
+
+          {:ok, <<key_len::32, value_len::32>>} ->
+            raise "is this a tombstone?"
+
+            raise "otherwise:"
+
+            case :file.pread(device, offset + key_len + value_len, value_len) do
+              {:ok, bytes} -> raise "todo"
+              :eof -> raise "todo"
+            end
+        end
+
+        case do
+        end
+
+        # read the key len
+        # read the value len
+        # unless tombstone, read the value
+        raise "todo"
+      end)
 
     raise "todo"
   end
