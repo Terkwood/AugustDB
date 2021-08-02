@@ -101,7 +101,7 @@ defmodule SSTable.Compaction do
       |> Enum.map(fn {device, offset} ->
         case :file.pread(device, offset, kv_length_bytes()) do
           :eof ->
-            {:eof, device}
+            :eof
 
           {:ok, l} ->
             <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
@@ -121,19 +121,19 @@ defmodule SSTable.Compaction do
                 end
 
               :eof ->
-                {:eof, device}
+                :eof
             end
         end
       end)
       |> Enum.filter(fn maybe_eof ->
         case maybe_eof do
-          {:eof, _device} -> false
+          :eof -> false
           _ -> true
         end
       end)
 
     raise "todo check zero arg (index_bytes)"
-    index = plug(many_kv_devices, output_sst, 0, [])
+    index = compare_and_write(many_kv_devices, output_sst, 0, [])
 
     Enum.map(many_devices, :ok = &:file.close(&1))
     :ok = :file.close(output_sst)
@@ -145,7 +145,17 @@ defmodule SSTable.Compaction do
     {output_path, index_path}
   end
 
-  defp plug(many_kv_devices, outfile, index_bytes, index) when is_list(many_kv_devices) do
+  defp compare_and_write([], _outfile, _index_bytes, index) do
+    index
+  end
+
+  defp compare_and_write(many_kv_devices, outfile, index_bytes, index)
+       when is_list(many_kv_devices) do
+    {the_lowest_key, the_lowest_value} =
+      many_kv_devices
+      |> Enum.map(fn {kv, _d} -> kv end)
+      |> Sort.lowest()
+
     raise "todo"
   end
 end
