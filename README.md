@@ -83,7 +83,7 @@ ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix
 You can [follow the CLI instructions for ExDoc](https://github.com/elixir-lang/ex_doc#using-exdoc-via-command-line):
 
 ```sh
-ex_doc "AugustDB" "0.1.1" "_build/dev/lib/august_db/ebin"
+ex_doc "AugustDB" "0.0.0" "_build/dev/lib/august_db/ebin"
  -m "AugustDbWeb.ValueController" -u "https://github.com/Terkwood/AugustDB"
 ```
 
