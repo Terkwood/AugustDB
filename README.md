@@ -6,11 +6,13 @@ This project is a work in progress 🚧 and is being developed primarily to suit
 
 ## Initial design
 
-Use gb_trees as memtable.
+All writes are first written to a commit log, protecting against crashes.
 
-Define a binary SSTable format.
+Newly written values are stored in a memtable backed by [:gb_trees](https://erlang.org/doc/man/gb_trees.html).
 
-Use phoenix to expose a REST API (PUT, GET, DEL).
+We define a binary SSTable format.
+
+We use phoenix to expose a REST API (PUT, GET, DEL) for creating, reading, updating, and deleting (for now) string resources using `Content-Type: application/json`. [Support for application/octet-stream](https://github.com/Terkwood/AugustDB/issues/24) is forthcoming.
 
 ### SSTable Format
 
@@ -56,11 +58,7 @@ curl -X DELETE http://localhost:4000/api/values/1
 
 
 
-## Notional distributed system
-
-First implement a local key-value store that uses a memtable, SSTables, and a commit log.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes.
-
-### Inspiration
+## Inspiration
 
 [Kleppmann: Designing Data-Intensive Applications](https://dataintensive.net/) gives a fantastic summary of local-node operation for data stores using SSTable, followed by detail on strategies for replication and partitioning.  Check it out!
 
@@ -74,9 +72,11 @@ You should enable [multi-time warp mode](https://erlang.org/doc/apps/erts/time_c
 ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix
 ```
 
-## REST API examples
 
-You can see some examples using curl [in value_controller.ex](https://github.com/Terkwood/AugustDB/blob/main/lib/august_db_web/controllers/value_controller.ex).
+## 🔮 The Glorious Future: a distributed system
+
+First implement a local key-value store that uses a memtable, SSTables, and a commit log.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes. [See the issue tracker](https://github.com/Terkwood/AugustDB/issues/15).
+
 
 ## Generating docs
 
