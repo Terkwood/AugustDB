@@ -75,13 +75,13 @@ defmodule SSTable.Compaction do
     end
   end
 
-  # def merge([]) do
-  #  :noop
-  # end
+  def merge([]) do
+    :noop
+  end
 
-  # defp merge([_single_path]) do
-  #  :noop
-  # end
+  defp merge([_single_path]) do
+    :noop
+  end
 
   @tombstone tombstone()
   defp merge(many_paths) when is_list(many_paths) do
@@ -99,33 +99,7 @@ defmodule SSTable.Compaction do
       many_devices
       |> Enum.map(&{&1, 0})
       |> Enum.map(fn {device, offset} ->
-        case :file.pread(device, offset, kv_length_bytes()) do
-          :eof ->
-            :eof
-
-          {:ok, l} ->
-            <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
-
-            case :file.pread(device, offset + kv_length_bytes(), key_len) do
-              {:ok, key_data} ->
-                key = IO.iodata_to_binary(key_data)
-
-                case value_len do
-                  @tombstone ->
-                    next_offset = offset + kv_length_bytes() + key_len
-                    {{key, :tombstone}, device, next_offset}
-
-                  vl ->
-                    {:ok, value_data} = :file.pread(device, offset + kv_length_bytes(), vl)
-                    value = IO.iodata_to_binary(value_data)
-                    next_offset = offset + kv_length_bytes() + key_len + vl
-                    {{key, value}, device, next_offset}
-                end
-
-              :eof ->
-                :eof
-            end
-        end
+        read_one(device, offset)
       end)
       |> Enum.filter(fn maybe_eof ->
         case maybe_eof do
@@ -134,10 +108,9 @@ defmodule SSTable.Compaction do
         end
       end)
 
-    raise "todo check zero arg (index_bytes)"
     index = compare_and_write(many_kv_devices, output_sst, 0, [])
 
-    Enum.map(many_devices, :ok = &:file.close(&1))
+    Enum.map(many_devices, &:file.close(&1))
     :ok = :file.close(output_sst)
 
     index_binary = :erlang.term_to_binary(Map.new(index))
@@ -160,6 +133,56 @@ defmodule SSTable.Compaction do
       |> Enum.map(fn {kv, _d, _offset} -> kv end)
       |> Sort.lowest()
 
-    write_kv(the_lowest_key, the_lowest_value, outfile)
+    segment_size = write_kv(the_lowest_key, the_lowest_value, outfile)
+
+    next_round =
+      many_kv_devices_offsets
+      |> Enum.map(fn {kv, d, offset} ->
+        case kv do
+          {k, _} when k == the_lowest_key -> raise "read"
+          higher -> {higher, d, offset}
+        end
+      end)
+
+    next_round
+    |> Enum.filter(fn tuple_or_eof ->
+      case tuple_or_eof do
+        :eof -> false
+        _ -> true
+      end
+    end)
+    |> compare_and_write(outfile, segment_size + index_bytes, [
+      {the_lowest_key, index_bytes} | index
+    ])
+  end
+
+  defp read_one(device, offset) do
+    case :file.pread(device, offset, kv_length_bytes()) do
+      :eof ->
+        :eof
+
+      {:ok, l} ->
+        <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
+
+        case :file.pread(device, offset + kv_length_bytes(), key_len) do
+          {:ok, key_data} ->
+            key = IO.iodata_to_binary(key_data)
+
+            case value_len do
+              @tombstone ->
+                next_offset = offset + kv_length_bytes() + key_len
+                {{key, :tombstone}, device, next_offset}
+
+              vl ->
+                {:ok, value_data} = :file.pread(device, offset + kv_length_bytes(), vl)
+                value = IO.iodata_to_binary(value_data)
+                next_offset = offset + kv_length_bytes() + key_len + vl
+                {{key, value}, device, next_offset}
+            end
+
+          :eof ->
+            :eof
+        end
+    end
   end
 end
