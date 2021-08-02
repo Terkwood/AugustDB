@@ -75,14 +75,15 @@ defmodule SSTable.Compaction do
     end
   end
 
-  def merge([]) do
-    :noop
-  end
+  # def merge([]) do
+  #  :noop
+  # end
 
-  defp merge([_single_path]) do
-    :noop
-  end
+  # defp merge([_single_path]) do
+  #  :noop
+  # end
 
+  @tombstone tombstone()
   defp merge(many_paths) when is_list(many_paths) do
     output_path = SSTable.new_filename()
 
@@ -98,30 +99,53 @@ defmodule SSTable.Compaction do
       many_devices
       |> Enum.map(&{&1, 0})
       |> Enum.map(fn {device, offset} ->
-        case :file.pread(device, offset, kv_length_bytes) do
+        case :file.pread(device, offset, kv_length_bytes()) do
           :eof ->
-            {:eof, d}
+            {:eof, device}
 
-          {:ok, <<key_len::32, value_len::32>>} ->
-            raise "is this a tombstone?"
+          {:ok, l} ->
+            <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
 
-            raise "otherwise:"
+            case :file.pread(device, offset + kv_length_bytes(), key_len) do
+              {:ok, key_data} ->
+                key = IO.iodata_to_binary(key_data)
 
-            case :file.pread(device, offset + key_len + value_len, value_len) do
-              {:ok, bytes} -> raise "todo"
-              :eof -> raise "todo"
+                case value_len do
+                  @tombstone ->
+                    {{key, :tombstone}, device}
+
+                  vl ->
+                    {:ok, value_data} = :file.pread(device, offset + kv_length_bytes(), vl)
+                    value = IO.iodata_to_binary(value_data)
+                    {{key, value}, device}
+                end
+
+              :eof ->
+                {:eof, device}
             end
         end
-
-        case do
+      end)
+      |> Enum.filter(fn maybe_eof ->
+        case maybe_eof do
+          {:eof, _device} -> false
+          _ -> true
         end
-
-        # read the key len
-        # read the value len
-        # unless tombstone, read the value
-        raise "todo"
       end)
 
+    raise "todo check zero arg (index_bytes)"
+    index = plug(many_kv_devices, output_sst, 0, [])
+
+    Enum.map(many_devices, :ok = &:file.close(&1))
+    :ok = :file.close(output_sst)
+
+    index_binary = :erlang.term_to_binary(Map.new(index))
+    index_path = hd(String.split(output_path, ".sst")) <> ".idx"
+    File.write!(index_path, index_binary)
+
+    {output_path, index_path}
+  end
+
+  defp plug(many_kv_devices, outfile, index_bytes, index) when is_list(many_kv_devices) do
     raise "todo"
   end
 end

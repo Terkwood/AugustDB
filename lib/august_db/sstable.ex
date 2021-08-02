@@ -3,8 +3,6 @@ defmodule SSTable do
 
   defstruct [:index, :table]
 
-  @tombstone 4_294_967_296
-
   @doc """
   Query all SSTable files using their associated index file and a key,
   returning a value if present. Filters tombstone entries.
@@ -97,6 +95,7 @@ defmodule SSTable do
     end
   end
 
+  @tombstone tombstone()
   defp query(key, sst_file_or_timestamp) do
     file_timestamp = hd(String.split("#{sst_file_or_timestamp}", ".sst"))
 
