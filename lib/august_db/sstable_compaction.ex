@@ -94,13 +94,6 @@ defmodule SSTable.Compaction do
 
     {:ok, output_sst} = :file.open(output_path, [:raw, :append])
 
-    #    indices =
-    #      many_paths
-    ##      |> Enum.map(fn p ->
-    #      hd(String.split(p, ".sst"))
-    #   end)
-    #  |> Enum.map(fn timestamp -> :erlang.binary_to_term(File.read!("#{timestamp}.idx")) end)
-
     many_kv_devices =
       many_devices
       |> Enum.map(&{&1, 0})
