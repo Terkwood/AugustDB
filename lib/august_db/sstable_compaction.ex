@@ -149,6 +149,8 @@ defmodule SSTable.Compaction do
     index
   end
 
+  import SSTable.Write
+
   defp compare_and_write(many_kv_devices, outfile, index_bytes, index)
        when is_list(many_kv_devices) do
     {the_lowest_key, the_lowest_value} =
@@ -156,6 +158,6 @@ defmodule SSTable.Compaction do
       |> Enum.map(fn {kv, _d} -> kv end)
       |> Sort.lowest()
 
-    raise "todo"
+    write_kv(the_lowest_key, the_lowest_value, outfile)
   end
 end
