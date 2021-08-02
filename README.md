@@ -48,7 +48,7 @@ Get a record
 curl  http://localhost:4000/api/values/1
 ```
 
-Delete a record
+Delete a record 
 
 ```sh
 curl -X DELETE http://localhost:4000/api/values/1
