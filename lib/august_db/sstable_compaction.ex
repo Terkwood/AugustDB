@@ -41,7 +41,7 @@ defmodule SSTable.Compaction do
     end
 
     def handle_info(:work, state) do
-      case Compaction.run() do
+      case SSTable.Compaction.run() do
         {sst, _idx} -> IO.puts("Compacted #{sst}")
         _ -> nil
       end
