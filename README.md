@@ -75,7 +75,7 @@ ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix
 
 ## 🔮 The Glorious Future: a distributed system
 
-First implement a local key-value store that uses a memtable, SSTables, and a commit log.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes. [See the issue tracker](https://github.com/Terkwood/AugustDB/issues/15).
+~~First implement a local key-value store that uses a memtable, SSTables, and a commit log~~.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes. [See the issue tracker](https://github.com/Terkwood/AugustDB/issues/15).
 
 
 ## Generating docs
