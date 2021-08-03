@@ -158,7 +158,7 @@ defmodule SSTable do
 
     next_acc =
       if should_write_sparse_index_entry do
-        {next_len, Map.put(idx, key, byte_pos), next_len}
+        {next_len, Map.put(idx, key, byte_pos), byte_pos}
       else
         {next_len, idx, last_byte_pos}
       end
