@@ -66,7 +66,7 @@ defmodule SSTable do
 
     {:ok, sst_out_file} = :file.open(table_fname, [:raw, :append])
 
-    sparse_index = kvs |> write_sstable(sst_out_file)
+    sparse_index = kvs |> write_sstable_and_index(sst_out_file)
 
     index_path = "#{time}.idx"
     File.write!(index_path, :erlang.term_to_binary(sparse_index))
@@ -134,12 +134,12 @@ defmodule SSTable do
     end
   end
 
-  defp write_sstable(pairs, device, acc \\ {0, %{}, nil})
+  defp write_sstable_and_index(pairs, device, acc \\ {0, %{}, nil})
 
   import SSTable.Write
 
   @bytes_per_entry SSTable.Index.bytes_per_entry()
-  defp write_sstable([{key, value} | rest], device, {byte_pos, idx, last_byte_pos}) do
+  defp write_sstable_and_index([{key, value} | rest], device, {byte_pos, idx, last_byte_pos}) do
     segment_size = write_kv(key, value, device)
 
     should_write_sparse_index_entry =
@@ -158,10 +158,10 @@ defmodule SSTable do
         {next_len, idx, last_byte_pos}
       end
 
-    write_sstable(rest, device, next_acc)
+    write_sstable_and_index(rest, device, next_acc)
   end
 
-  defp write_sstable([], _device, {_byte_pos, idx, _last_byte_pos}) do
+  defp write_sstable_and_index([], _device, {_byte_pos, idx, _last_byte_pos}) do
     idx
   end
 end
