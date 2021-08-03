@@ -99,8 +99,7 @@ defmodule SSTable.Compaction do
           many_devices
           |> Enum.map(&{&1, 0})
           |> Enum.map(fn {device, offset} ->
-            IO.puts("initial read")
-            IO.inspect(read_one(device, offset))
+            read_one(device, offset)
           end)
           |> Enum.filter(fn maybe_eof ->
             case maybe_eof do
@@ -135,19 +134,14 @@ defmodule SSTable.Compaction do
       |> Enum.map(fn {kv, _d, _offset} -> kv end)
       |> Sort.lowest()
 
-    IO.inspect({the_lowest_key, the_lowest_value})
-
     segment_size = write_kv(the_lowest_key, the_lowest_value, outfile)
-
-    IO.inspect(segment_size)
 
     next_round =
       many_kv_devices_offsets
       |> Enum.map(fn {kv, d, offset} ->
         case kv do
           {k, _} when k == the_lowest_key ->
-            IO.puts("need to read")
-            IO.inspect(read_one(d, offset))
+            read_one(d, offset)
 
           higher ->
             {higher, d, offset}
