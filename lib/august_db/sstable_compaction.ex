@@ -81,6 +81,12 @@ defmodule SSTable.Compaction do
     end
   end
 
+  defmodule IndexAcc do
+    defstruct index: [],
+              current_offset: 0,
+              last_offset: nil
+  end
+
   @tombstone tombstone()
   defp merge(paths) when is_list(paths) do
     case paths do
@@ -114,7 +120,7 @@ defmodule SSTable.Compaction do
             end
           end)
 
-        index = compare_and_write(many_kv_devices, output_sst, 0, [])
+        index = compare_and_write(many_kv_devices, output_sst, %IndexAcc{})
 
         Enum.map(many_devices, &:file.close(&1))
         :ok = :file.close(output_sst)
@@ -127,13 +133,17 @@ defmodule SSTable.Compaction do
     end
   end
 
-  defp compare_and_write([], _outfile, _index_bytes, index) do
+  defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do
     index
   end
 
   import SSTable.Write
-
-  defp compare_and_write(many_kv_devices_offsets, outfile, index_bytes, index)
+  @bytes_per_entry SSTable.Index.bytes_per_entry()
+  defp compare_and_write(many_kv_devices_offsets, outfile, %IndexAcc{
+         index: index,
+         current_offset: index_bytes,
+         last_offset: last_offset
+       })
        when is_list(many_kv_devices_offsets) do
     {the_lowest_key, the_lowest_value} =
       many_kv_devices_offsets
@@ -161,9 +171,33 @@ defmodule SSTable.Compaction do
         _ -> true
       end
     end)
-    |> compare_and_write(outfile, segment_size + index_bytes, [
-      {the_lowest_key, index_bytes} | index
-    ])
+    |> Enum.map(fn many_kvd_offsets ->
+      should_write_sparse_index_entry =
+        case last_offset do
+          nil -> true
+          lbp when lbp + @bytes_per_entry < index_bytes -> true
+          _too_soon -> false
+        end
+
+      next_acc =
+        if should_write_sparse_index_entry do
+          %IndexAcc{
+            current_offset: segment_size + index_bytes,
+            index: [
+              {the_lowest_key, index_bytes} | index
+            ],
+            last_offset: index_bytes
+          }
+        else
+          %IndexAcc{
+            current_offset: segment_size + index_bytes,
+            index: index,
+            last_offset: last_offset
+          }
+        end
+
+      compare_and_write(many_kvd_offsets, outfile, next_acc)
+    end)
   end
 
   defp read_one(device, offset) do
