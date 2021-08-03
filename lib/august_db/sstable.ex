@@ -71,10 +71,10 @@ defmodule SSTable do
 
     {:ok, sst_out_file} = :file.open(table_fname, [:raw, :append])
 
-    idx = kvs |> write_sstable(sst_out_file)
+    sparse_index = kvs |> write_sstable(sst_out_file)
 
     index_path = "#{time}.idx"
-    File.write!(index_path, :erlang.term_to_binary(idx))
+    File.write!(index_path, :erlang.term_to_binary(sparse_index))
 
     IO.puts("Dumped SSTable to #{table_fname}")
   end
