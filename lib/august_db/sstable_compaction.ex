@@ -28,7 +28,7 @@ defmodule SSTable.Compaction do
   defmodule Periodic do
     use GenServer
 
-    @compaction_period_minutes 1
+    @compaction_period_seconds 15
 
     def start_link(_opts) do
       GenServer.start_link(__MODULE__, %{})
@@ -52,7 +52,7 @@ defmodule SSTable.Compaction do
     end
 
     defp schedule_work() do
-      Process.send_after(self(), :work, @compaction_period_minutes * 60 * 1000)
+      Process.send_after(self(), :work, @compaction_period_seconds * 1000)
     end
   end
 
@@ -99,7 +99,8 @@ defmodule SSTable.Compaction do
           many_devices
           |> Enum.map(&{&1, 0})
           |> Enum.map(fn {device, offset} ->
-            read_one(device, offset)
+            IO.puts("initial read")
+            IO.inspect(read_one(device, offset))
           end)
           |> Enum.filter(fn maybe_eof ->
             case maybe_eof do
@@ -134,14 +135,22 @@ defmodule SSTable.Compaction do
       |> Enum.map(fn {kv, _d, _offset} -> kv end)
       |> Sort.lowest()
 
+    IO.inspect({the_lowest_key, the_lowest_value})
+
     segment_size = write_kv(the_lowest_key, the_lowest_value, outfile)
+
+    IO.inspect(segment_size)
 
     next_round =
       many_kv_devices_offsets
       |> Enum.map(fn {kv, d, offset} ->
         case kv do
-          {k, _} when k == the_lowest_key -> read_one(d, offset)
-          higher -> {higher, d, offset + segment_size}
+          {k, _} when k == the_lowest_key ->
+            IO.puts("need to read")
+            IO.inspect(read_one(d, offset))
+
+          higher ->
+            {higher, d, offset}
         end
       end)
 
