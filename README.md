@@ -28,7 +28,7 @@ This is the specification for [binary SSTables](https://github.com/Terkwood/Augu
 #### tombstone records
 
 1. Length of key in bytes
-2. -1 to indicate tombstone
+2. `2**32 - 1` to indicate tombstone
 3. Raw key, not escaped
 
 ### Making HTTP calls
