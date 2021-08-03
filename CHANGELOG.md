@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.2.0](https://github.com/Terkwood/AugustDB/compare/v0.1.1...v0.2.0) (2021-08-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* binary SSTable format (#68)
+
+### Features
+
+* binary SSTable format ([#68](https://github.com/Terkwood/AugustDB/issues/68)) ([8f1f8aa](https://github.com/Terkwood/AugustDB/commit/8f1f8aa732b7e10496a656ac5c7b842dac1bb10d))
+
+
+### Bug Fixes
+
+* tombstone binary rep, write commit log on del ([#70](https://github.com/Terkwood/AugustDB/issues/70)) ([c9ceb68](https://github.com/Terkwood/AugustDB/commit/c9ceb68330c4e2832b864b6887e00c12ff95e387))
+
 ### [0.1.1](https://github.com/Terkwood/AugustDB/compare/v0.1.0...v0.1.1) (2021-08-01)
 
 
