@@ -31,7 +31,7 @@ defmodule SSTable.Compaction do
   defmodule Periodic do
     use GenServer
 
-    @compaction_period_seconds 60
+    @compaction_period_seconds 10
 
     def start_link(_opts) do
       GenServer.start_link(__MODULE__, %{})
@@ -171,7 +171,7 @@ defmodule SSTable.Compaction do
         _ -> true
       end
     end)
-    |> Enum.map(fn many_kvd_offsets ->
+    |> Enum.map(fn kvd_offset ->
       should_write_sparse_index_entry =
         case last_offset do
           nil -> true
@@ -196,7 +196,10 @@ defmodule SSTable.Compaction do
           }
         end
 
-      compare_and_write(many_kvd_offsets, outfile, next_acc)
+      {kvd_offset, next_acc}
+    end)
+    |> Enum.map(fn {kvd_offset, next_acc} ->
+      compare_and_write(kvd_offset, outfile, next_acc)
     end)
   end
 
