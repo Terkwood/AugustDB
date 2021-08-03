@@ -31,7 +31,7 @@ defmodule SSTable.Compaction do
   defmodule Periodic do
     use GenServer
 
-    @compaction_period_seconds 10
+    @compaction_period_seconds 60
 
     def start_link(_opts) do
       GenServer.start_link(__MODULE__, %{})
