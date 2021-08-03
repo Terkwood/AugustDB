@@ -3,7 +3,8 @@ defmodule SSTable.Settings do
     8
   end
 
+  @t 4_294_967_296 - 1
   def tombstone do
-    4_294_967_296
+    @t
   end
 end

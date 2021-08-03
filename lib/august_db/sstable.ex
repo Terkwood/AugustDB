@@ -146,6 +146,9 @@ defmodule SSTable do
   import SSTable.Write
 
   defp write_sstable_and_index([{key, value} | rest], device, acc) do
+    IO.puts("bout to write")
+    IO.inspect(key)
+    IO.inspect(value)
     segment_size = write_kv(key, value, device)
 
     {al, idx} = acc
