@@ -6,7 +6,9 @@ defmodule SSTable.Compaction do
   """
 
   @doc """
-  Run compaction on all SSTables, generating an SST and an IDX file
+  Run compaction on all SSTables, generating a Sorted String Table file
+  (.sst) and an erlang binary representation of its index (key to byte
+  offset) as a `.idx` file.
   """
   def run do
     old_sst_paths = Enum.sort(Path.wildcard("*.sst"))
@@ -61,8 +63,8 @@ defmodule SSTable.Compaction do
     segments.
     """
 
-    @spec lowest([{any, any}, ...]) :: {any, any}
-    def lowest([{k, v} | newer]) do
+    @spec lowest_most_recent([{any, any}, ...]) :: {any, any}
+    def lowest_most_recent([{k, v} | newer]) do
       lowest([{k, v} | newer], {k, v})
     end
 
@@ -136,7 +138,7 @@ defmodule SSTable.Compaction do
     {the_lowest_key, the_lowest_value} =
       many_kv_devices_offsets
       |> Enum.map(fn {kv, _d, _offset} -> kv end)
-      |> Sort.lowest()
+      |> Sort.lowest_most_recent()
 
     segment_size = write_kv(the_lowest_key, the_lowest_value, outfile)
 
