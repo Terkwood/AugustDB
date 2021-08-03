@@ -164,6 +164,30 @@ defmodule SSTable.Compaction do
         end
       end)
 
+    should_write_sparse_index_entry =
+      case last_offset do
+        nil -> true
+        lbp when lbp + @bytes_per_entry < index_bytes -> true
+        _too_soon -> false
+      end
+
+    next_acc =
+      if should_write_sparse_index_entry do
+        %IndexAcc{
+          current_offset: segment_size + index_bytes,
+          index: [
+            {the_lowest_key, index_bytes} | index
+          ],
+          last_offset: index_bytes
+        }
+      else
+        %IndexAcc{
+          current_offset: segment_size + index_bytes,
+          index: index,
+          last_offset: last_offset
+        }
+      end
+
     next_round
     |> Enum.filter(fn tuple_or_eof ->
       case tuple_or_eof do
@@ -171,36 +195,7 @@ defmodule SSTable.Compaction do
         _ -> true
       end
     end)
-    |> Enum.map(fn kvd_offset ->
-      should_write_sparse_index_entry =
-        case last_offset do
-          nil -> true
-          lbp when lbp + @bytes_per_entry < index_bytes -> true
-          _too_soon -> false
-        end
-
-      next_acc =
-        if should_write_sparse_index_entry do
-          %IndexAcc{
-            current_offset: segment_size + index_bytes,
-            index: [
-              {the_lowest_key, index_bytes} | index
-            ],
-            last_offset: index_bytes
-          }
-        else
-          %IndexAcc{
-            current_offset: segment_size + index_bytes,
-            index: index,
-            last_offset: last_offset
-          }
-        end
-
-      {kvd_offset, next_acc}
-    end)
-    |> Enum.map(fn {kvd_offset, next_acc} ->
-      compare_and_write(kvd_offset, outfile, next_acc)
-    end)
+    |> compare_and_write(outfile, next_acc)
   end
 
   defp read_one(device, offset) do
