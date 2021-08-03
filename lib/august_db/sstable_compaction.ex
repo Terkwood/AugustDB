@@ -125,7 +125,7 @@ defmodule SSTable.Compaction do
         Enum.map(many_devices, &:file.close(&1))
         :ok = :file.close(output_sst)
 
-        index_binary = :erlang.term_to_binary(Map.new(index))
+        index_binary = :erlang.term_to_binary(index)
         index_path = hd(String.split(output_path, ".sst")) <> ".idx"
         File.write!(index_path, index_binary)
 

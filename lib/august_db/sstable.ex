@@ -134,7 +134,7 @@ defmodule SSTable do
     end
   end
 
-  defp write_sstable_and_index(pairs, device, acc \\ {0, %{}, nil})
+  defp write_sstable_and_index(pairs, device, acc \\ {0, [], nil})
 
   import SSTable.Write
 
@@ -153,7 +153,7 @@ defmodule SSTable do
 
     next_acc =
       if should_write_sparse_index_entry do
-        {next_len, Map.put(idx, key, byte_pos), byte_pos}
+        {next_len, [{key, byte_pos} | idx], byte_pos}
       else
         {next_len, idx, last_byte_pos}
       end
