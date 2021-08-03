@@ -6,17 +6,59 @@ This project is a work in progress 🚧 and is being developed primarily to suit
 
 ## Initial design
 
-Use gb_trees as memtable.
+All writes are first written to a commit log, protecting against crashes.
 
-Use nimble_csv to generate SSTable format.
+Newly written values are stored in a memtable backed by [:gb_trees](https://erlang.org/doc/man/gb_trees.html).
 
-Use phoenix to expose a REST API (PUT, GET, DEL).
+We define a binary SSTable format.
 
-## Notional distributed system
+We use phoenix to expose a REST API (PUT, GET, DEL) for creating, reading, updating, and deleting (for now) string resources using `Content-Type: application/json`. [Support for application/octet-stream](https://github.com/Terkwood/AugustDB/issues/24) is forthcoming.
 
-First implement a local key-value store that uses a memtable, SSTables, and a commit log.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes.
+### SSTable Format
 
-### Inspiration
+This is the specification for [binary SSTables](https://github.com/Terkwood/AugustDB/issues/51).
+
+#### value records 
+
+1. Length of key in bytes
+2. Length of value in bytes
+3. Raw key, not escaped
+4. Raw value, not escaped
+
+#### tombstone records
+
+1. Length of key in bytes
+2. -1 to indicate tombstone
+3. Raw key, not escaped
+
+### Making HTTP calls
+
+Create a record
+
+```sh
+curl -X PUT  -d value='meh meh'  http://localhost:4000/api/values/1
+```
+
+Update a record
+```sh
+curl -X PUT  -d value='n0 n0'  http://localhost:4000/api/values/1
+```
+
+Get a record
+
+```sh
+curl  http://localhost:4000/api/values/1
+```
+
+Delete a record 
+
+```sh
+curl -X DELETE http://localhost:4000/api/values/1
+```
+
+
+
+## Inspiration
 
 [Kleppmann: Designing Data-Intensive Applications](https://dataintensive.net/) gives a fantastic summary of local-node operation for data stores using SSTable, followed by detail on strategies for replication and partitioning.  Check it out!
 
@@ -30,9 +72,6 @@ You should enable [multi-time warp mode](https://erlang.org/doc/apps/erts/time_c
 ELIXIR_ERL_OPTIONS="+C multi_time_warp" iex -S mix
 ```
 
-## REST API examples
-
-You can see some examples using curl [in value_controller.ex](https://github.com/Terkwood/AugustDB/blob/main/lib/august_db_web/controllers/value_controller.ex).
 
 ## Generating docs
 
@@ -54,3 +93,10 @@ To start your Phoenix server:
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
 
 Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+
+
+
+
+## 🔮 The Glorious Future: a distributed system
+
+~~First implement a local key-value store that uses a memtable, SSTables, and a commit log~~.  Then implement a replicating data store which syncs via gossip.  Then implement partitioning using vnodes. [See the issue tracker](https://github.com/Terkwood/AugustDB/issues/15).

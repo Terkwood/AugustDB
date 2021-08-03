@@ -7,9 +7,7 @@ defmodule AugustDbWeb.ValueView do
   end
 
   def render("value.json", %{value: data}) do
-    # Remove this as part of upgrade to binary storage
-    # https://github.com/Terkwood/AugustDB/issues/60
-    Macro.unescape_string(data)
+    data
   end
 
   def render("update.json", %{key: key, value: value}) do

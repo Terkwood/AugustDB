@@ -70,18 +70,8 @@ defmodule Memtable do
     commit_log_backup = CommitLog.backup()
     CommitLog.new()
 
-    sstable = SSTable.from(flushing)
-
-    time_name = "#{:erlang.system_time()}"
-
-    table_fname = "#{time_name}.sst"
-    table_file_stream = File.stream!(table_fname)
-    table_stream = sstable.table
-    table_stream |> Stream.into(table_file_stream) |> Stream.run()
-
-    index_binary = :erlang.term_to_binary(sstable.index)
-    index_path = "#{time_name}.idx"
-    File.write!(index_path, index_binary)
+    ## Write the current memtable to disk in a binary format
+    SSTable.dump(flushing)
 
     # Finished.  Clear the flushing table state.
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
