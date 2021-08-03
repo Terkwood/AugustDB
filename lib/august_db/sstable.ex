@@ -161,7 +161,13 @@ defmodule SSTable do
   end
 
   defp find_nearest_offset(index, key) do
-    raise "todo"
+    Enum.reduce_while(index, 0, fn {next_key, next_offset}, last_offset ->
+      case next_key do
+        n when n > key -> {:halt, last_offset}
+        n when n == key -> {:halt, next_offset}
+        _ -> {:cont, next_offset}
+      end
+    end)
   end
 
   defp write_sstable_and_index(pairs, device, acc \\ {0, [], nil})
