@@ -1,4 +1,4 @@
-NimbleCSV.define(CommitLogParser, separator: "\t", escape: "\"")
+NimbleCSV.define(CommitLogParser, separator: TSV.col_separator(), escape: "\"")
 
 defmodule CommitLog do
   @tsv_header_string "k\tv\tt\n"
@@ -12,7 +12,9 @@ defmodule CommitLog do
   def append(key, value) do
     File.write!(
       @log_file,
-      key <> "\t" <> value <> "\t" <> "#{:erlang.monotonic_time()}" <> "\n",
+      key <>
+        TSV.col_separator() <>
+        value <> TSV.col_separator() <> "#{:erlang.monotonic_time()}" <> TSV.row_separator(),
       [:append]
     )
   end
