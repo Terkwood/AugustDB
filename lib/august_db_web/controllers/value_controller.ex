@@ -65,6 +65,8 @@ defmodule AugustDbWeb.ValueController do
   ```
   """
   def delete(conn, %{"id" => key}) do
+    CommitLog.append(key, :tombstone)
+
     Memtable.delete(key)
 
     send_resp(conn, 204, "")
