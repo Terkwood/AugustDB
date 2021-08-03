@@ -58,11 +58,10 @@ defmodule SSTable.Compaction do
   end
 
   defmodule Sort do
-    @moduledoc """
+    @doc """
     Finds the lowest _and_ most recent key across multiple file
     segments.
     """
-
     @spec lowest_most_recent([{any, any}, ...]) :: {any, any}
     def lowest_most_recent([{k, v} | newer]) do
       lowest([{k, v} | newer], {k, v})
