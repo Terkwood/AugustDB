@@ -39,20 +39,15 @@ defmodule SSTable do
   end
 
   @doc """
-  Write a list of key/value pairs to binary SSTable file
-  Also write a sparse index of offsets.
+  Write a list of key/value pairs to binary SSTable file (<timestamp>.sst)
+  Also write a sparse index of offsets (<timestamp>.idx)
 
   ## Example
 
-      iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
-      iex> them.index
-      %{
-        "k1" => 4,
-        "k2" => 9,
-        "k3" => 15,
-      }
-
-      iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
+  ```elixir
+  tree = :gb_trees.enter("k3","uuu",:gb_trees.enter("k2","ww",:gb_trees.enter("k1","v",:gb_trees.empty())))
+  SSTable.dump(tree)
+  ```
   """
   def dump(gb_tree) do
     maybe_kvs =
