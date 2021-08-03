@@ -119,6 +119,8 @@ defmodule SSTable do
           case :file.pread(sst, offset, kv_length_bytes()) do
             {:ok, l} ->
               <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
+              IO.puts("value len:")
+              IO.inspect(value_len)
 
               case value_len do
                 @tombstone ->
