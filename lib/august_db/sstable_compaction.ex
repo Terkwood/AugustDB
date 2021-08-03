@@ -184,7 +184,7 @@ defmodule SSTable.Compaction do
                 {{key, :tombstone}, device, next_offset}
 
               vl ->
-                {:ok, value_data} = :file.pread(device, offset + kv_length_bytes(), vl)
+                {:ok, value_data} = :file.pread(device, offset + kv_length_bytes() + key_len, vl)
                 value = IO.iodata_to_binary(value_data)
                 next_offset = offset + kv_length_bytes() + key_len + vl
                 {{key, value}, device, next_offset}
