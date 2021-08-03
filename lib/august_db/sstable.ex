@@ -71,7 +71,7 @@ defmodule SSTable do
 
     {:ok, sst_out_file} = :file.open(table_fname, [:raw, :append])
 
-    idx = kvs |> write_sstable_and_index(sst_out_file)
+    idx = kvs |> write_sstable(sst_out_file)
 
     index_path = "#{time}.idx"
     File.write!(index_path, :erlang.term_to_binary(idx))
@@ -139,20 +139,20 @@ defmodule SSTable do
     end
   end
 
-  defp write_sstable_and_index(pairs, device, acc \\ {0, %{}})
+  defp write_sstable(pairs, device, acc \\ {0, %{}})
 
   import SSTable.Write
 
-  defp write_sstable_and_index([{key, value} | rest], device, acc) do
+  defp write_sstable([{key, value} | rest], device, acc) do
     segment_size = write_kv(key, value, device)
 
     {al, idx} = acc
     next_len = al + segment_size
 
-    write_sstable_and_index(rest, device, {next_len, Map.put(idx, key, al)})
+    write_sstable(rest, device, {next_len, Map.put(idx, key, al)})
   end
 
-  defp write_sstable_and_index([], _device, {_byte_pos, idx}) do
+  defp write_sstable([], _device, {_byte_pos, idx}) do
     idx
   end
 end
