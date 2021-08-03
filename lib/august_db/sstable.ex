@@ -39,20 +39,15 @@ defmodule SSTable do
   end
 
   @doc """
-  Write a list of key/value pairs to binary SSTable file
-  Also write an index of offsets.
+  Write a list of key/value pairs to binary SSTable file (<timestamp>.sst)
+  Also write a sparse index of offsets (<timestamp>.idx)
 
   ## Example
 
-      iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
-      iex> them.index
-      %{
-        "k1" => 4,
-        "k2" => 9,
-        "k3" => 15,
-      }
-
-      iex> them = SSTable.dump([~w(k1 v), ~w(k2 ww), ~w(k3 uuu)])
+  ```elixir
+  tree = :gb_trees.enter("k3","uuu",:gb_trees.enter("k2","ww",:gb_trees.enter("k1","v",:gb_trees.empty())))
+  SSTable.dump(tree)
+  ```
   """
   def dump(gb_tree) do
     maybe_kvs =
@@ -71,10 +66,10 @@ defmodule SSTable do
 
     {:ok, sst_out_file} = :file.open(table_fname, [:raw, :append])
 
-    idx = kvs |> write_sstable_and_index(sst_out_file)
+    sparse_index = kvs |> write_sstable_and_index(sst_out_file)
 
     index_path = "#{time}.idx"
-    File.write!(index_path, :erlang.term_to_binary(idx))
+    File.write!(index_path, :erlang.term_to_binary(sparse_index))
 
     IO.puts("Dumped SSTable to #{table_fname}")
   end
@@ -102,36 +97,20 @@ defmodule SSTable do
     {:ok, index_bin} = File.read("#{file_timestamp}.idx")
     index = :erlang.binary_to_term(index_bin)
 
-    maybe_offset =
-      case Map.get(index, key) do
+    nearest_offset =
+      case find_nearest_offset(index, key) do
         nil -> :none
         offset -> offset
       end
 
-    case maybe_offset do
+    case nearest_offset do
       :none ->
         :none
 
       offset ->
         {:ok, sst} = :file.open("#{file_timestamp}.sst", [:read, :raw])
 
-        out =
-          case :file.pread(sst, offset, kv_length_bytes()) do
-            {:ok, l} ->
-              <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
-
-              case value_len do
-                @tombstone ->
-                  :tombstone
-
-                vl ->
-                  {:ok, value_bin} = :file.pread(sst, offset + kv_length_bytes() + key_len, vl)
-                  :erlang.iolist_to_binary(value_bin)
-              end
-
-            :eof ->
-              :none
-          end
+        out = keep_reading(key, sst, offset)
 
         :file.close(sst)
 
@@ -139,20 +118,86 @@ defmodule SSTable do
     end
   end
 
-  defp write_sstable_and_index(pairs, device, acc \\ {0, %{}})
+  defp keep_reading(key, sst, offset) do
+    case :file.pread(sst, offset, kv_length_bytes()) do
+      {:ok, l} ->
+        <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
+
+        {:ok, key_bin} = :file.pread(sst, offset + kv_length_bytes(), key_len)
+        next_key = :erlang.iolist_to_binary(key_bin)
+
+        next_value_adjusted_len =
+          case value_len do
+            @tombstone -> 0
+            n -> n
+          end
+
+        case next_key do
+          n when n == key ->
+            case value_len do
+              @tombstone ->
+                :tombstone
+
+              vl ->
+                {:ok, value_bin} = :file.pread(sst, offset + kv_length_bytes() + key_len, vl)
+                :erlang.iolist_to_binary(value_bin)
+            end
+
+          n when n > key ->
+            # we've gone too far!  the key isn't in this file
+            :none
+
+          _ignore ->
+            keep_reading(
+              key,
+              sst,
+              offset + kv_length_bytes() + key_len + next_value_adjusted_len
+            )
+        end
+
+      :eof ->
+        :none
+    end
+  end
+
+  defp find_nearest_offset(index, key) do
+    Enum.reduce_while(index, 0, fn {next_key, next_offset}, last_offset ->
+      case next_key do
+        n when n > key -> {:halt, last_offset}
+        n when n == key -> {:halt, next_offset}
+        _ -> {:cont, next_offset}
+      end
+    end)
+  end
+
+  defp write_sstable_and_index(pairs, device, acc \\ {0, [], nil})
 
   import SSTable.Write
 
-  defp write_sstable_and_index([{key, value} | rest], device, acc) do
+  @bytes_per_entry SSTable.Index.bytes_per_entry()
+  defp write_sstable_and_index([{key, value} | rest], device, {byte_pos, idx, last_byte_pos}) do
     segment_size = write_kv(key, value, device)
 
-    {al, idx} = acc
-    next_len = al + segment_size
+    should_write_sparse_index_entry =
+      case last_byte_pos do
+        nil -> true
+        lbp when lbp + @bytes_per_entry < byte_pos -> true
+        _too_soon -> false
+      end
 
-    write_sstable_and_index(rest, device, {next_len, Map.put(idx, key, al)})
+    next_len = byte_pos + segment_size
+
+    next_acc =
+      if should_write_sparse_index_entry do
+        {next_len, [{key, byte_pos} | idx], byte_pos}
+      else
+        {next_len, idx, last_byte_pos}
+      end
+
+    write_sstable_and_index(rest, device, next_acc)
   end
 
-  defp write_sstable_and_index([], _device, {_byte_pos, idx}) do
+  defp write_sstable_and_index([], _device, {_byte_pos, idx, _last_byte_pos}) do
     idx
   end
 end
