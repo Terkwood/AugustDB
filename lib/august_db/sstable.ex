@@ -97,41 +97,71 @@ defmodule SSTable do
     {:ok, index_bin} = File.read("#{file_timestamp}.idx")
     index = :erlang.binary_to_term(index_bin)
 
-    maybe_offset =
-      case Map.get(index, key) do
+    nearest_offset =
+      case find_nearest_offset(index, key) do
         nil -> :none
         offset -> offset
       end
 
-    case maybe_offset do
+    case nearest_offset do
       :none ->
         :none
 
       offset ->
         {:ok, sst} = :file.open("#{file_timestamp}.sst", [:read, :raw])
 
-        out =
-          case :file.pread(sst, offset, kv_length_bytes()) do
-            {:ok, l} ->
-              <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
-
-              case value_len do
-                @tombstone ->
-                  :tombstone
-
-                vl ->
-                  {:ok, value_bin} = :file.pread(sst, offset + kv_length_bytes() + key_len, vl)
-                  :erlang.iolist_to_binary(value_bin)
-              end
-
-            :eof ->
-              :none
-          end
+        out = keep_reading(key, sst, offset)
 
         :file.close(sst)
 
         out
     end
+  end
+
+  defp keep_reading(key, sst, offset) do
+    case :file.pread(sst, offset, kv_length_bytes()) do
+      {:ok, l} ->
+        <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
+
+        {:ok, key_bin} = :file.pread(sst, offset + kv_length_bytes(), key_len)
+        next_key = :erlang.iolist_to_binary(key_bin)
+
+        next_value_adjusted_len =
+          case value_len do
+            @tombstone -> 0
+            n -> n
+          end
+
+        case next_key do
+          n when n == key ->
+            case value_len do
+              @tombstone ->
+                :tombstone
+
+              vl ->
+                {:ok, value_bin} = :file.pread(sst, offset + kv_length_bytes() + key_len, vl)
+                :erlang.iolist_to_binary(value_bin)
+            end
+
+          n when n > key ->
+            # we've gone too far!  the key isn't in this file
+            :none
+
+          _ignore ->
+            keep_reading(
+              key,
+              sst,
+              offset + kv_length_bytes() + key_len + next_value_adjusted_len
+            )
+        end
+
+      :eof ->
+        :none
+    end
+  end
+
+  defp find_nearest_offset(index, key) do
+    raise "todo"
   end
 
   defp write_sstable_and_index(pairs, device, acc \\ {0, [], nil})
