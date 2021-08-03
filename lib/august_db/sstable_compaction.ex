@@ -8,7 +8,8 @@ defmodule SSTable.Compaction do
   @doc """
   Run compaction on all SSTables, generating a Sorted String Table file
   (.sst) and an erlang binary representation of its index (key to byte
-  offset) as a `.idx` file.
+  offset) as a `.idx` file.  The index is sparse, having only one entry
+  per `SSTable.Index.bytes_per_entry` bytes.
   """
   def run do
     old_sst_paths = Enum.sort(Path.wildcard("*.sst"))
