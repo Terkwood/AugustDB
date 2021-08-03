@@ -40,7 +40,7 @@ defmodule SSTable do
 
   @doc """
   Write a list of key/value pairs to binary SSTable file
-  Also write an index of offsets.
+  Also write a sparse index of offsets.
 
   ## Example
 
@@ -139,20 +139,34 @@ defmodule SSTable do
     end
   end
 
-  defp write_sstable(pairs, device, acc \\ {0, %{}})
+  defp write_sstable(pairs, device, acc \\ {0, %{}, nil})
 
   import SSTable.Write
 
-  defp write_sstable([{key, value} | rest], device, acc) do
+  @bytes_per_entry SSTable.Index.bytes_per_entry()
+  defp write_sstable([{key, value} | rest], device, {byte_pos, idx, last_byte_pos}) do
     segment_size = write_kv(key, value, device)
 
-    {al, idx} = acc
-    next_len = al + segment_size
+    should_write_sparse_index_entry =
+      case last_byte_pos do
+        nil -> true
+        lbp when lbp + @bytes_per_entry < byte_pos -> true
+        _too_soon -> false
+      end
 
-    write_sstable(rest, device, {next_len, Map.put(idx, key, al)})
+    next_len = byte_pos + segment_size
+
+    next_acc =
+      if should_write_sparse_index_entry do
+        {next_len, Map.put(idx, key, byte_pos), next_len}
+      else
+        {next_len, idx, last_byte_pos}
+      end
+
+    write_sstable(rest, device, next_acc)
   end
 
-  defp write_sstable([], _device, {_byte_pos, idx}) do
+  defp write_sstable([], _device, {_byte_pos, idx, _last_byte_pos}) do
     idx
   end
 end
