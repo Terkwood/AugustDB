@@ -35,7 +35,6 @@ defmodule SSTable.Compaction do
     end
 
     def init(state) do
-      # Schedule work to be performed at some point
       schedule_work()
       {:ok, state}
     end
@@ -46,7 +45,7 @@ defmodule SSTable.Compaction do
         _ -> nil
       end
 
-      # Reschedule once more
+      # Do it again
       schedule_work()
       {:noreply, state}
     end
@@ -57,6 +56,11 @@ defmodule SSTable.Compaction do
   end
 
   defmodule Sort do
+    @moduledoc """
+    Finds the lowest _and_ most recent key across multiple file
+    segments.
+    """
+
     @spec lowest([{any, any}, ...]) :: {any, any}
     def lowest([{k, v} | newer]) do
       lowest([{k, v} | newer], {k, v})
