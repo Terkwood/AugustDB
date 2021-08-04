@@ -1,13 +1,31 @@
 defmodule SSTable.Index do
   use Agent
 
-  @bytes_per_entry 4 * 1024
-  @doc """
-  Defines how sparse the index file should be.
-  The application will only write one `key -> offset`
-  value per this many bytes.
+  @moduledoc """
+  This agent keeps all sparse SSTable indices in memory.
   """
-  def bytes_per_entry do
-    @bytes_per_entry
+
+  def start_link(initial_value) do
+    Agent.start_link(fn -> initial_value end, name: __MODULE__)
+  end
+
+  @doc """
+  Retrieve the sparse index for a given SSTable.
+  """
+  def get(sst_filename) do
+    raise "todo"
+  end
+
+  @doc """
+  Saves a sparse index into memory.  It can be queried by its associated SSTable filename.
+  """
+  def put(sst_filename, sparse_index) do
+    raise "todo"
+  end
+
+  @doc """
+  Load all sparse indices from disk and save them into main memory.
+  """
+  def load_all do
   end
 end

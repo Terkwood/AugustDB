@@ -73,7 +73,7 @@ defmodule SSTable do
 
     IO.puts("Dumped SSTable to #{sst_path}")
 
-    {sst_path, index_path}
+    {sst_path, sparse_index}
   end
 
   def new_filename(time_name \\ :erlang.system_time()) do
