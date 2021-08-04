@@ -15,7 +15,6 @@ defmodule AugustDb.Application do
       {SSTable.Index, %{}},
       # Make sure commit log exists, old entries are written into SSTable, etc.
       {Task, fn -> Startup.init() end},
-
       # Start periodic SSTable compaction
       SSTable.Compaction.Periodic,
       # Start the Telemetry supervisor
