@@ -70,8 +70,10 @@ defmodule Memtable do
     commit_log_backup = CommitLog.backup()
     CommitLog.new()
 
-    ## Write the current memtable to disk in a binary format
-    {flushed_sst, flushed_idx} = SSTable.dump(flushing)
+    # Write the current memtable to disk in a binary format
+    {flushed_sst, sparse_index} = SSTable.dump(flushing)
+    # ⚡ Keep a copy of the index in memory ⚡
+    SSTable.Index.remember(flushed_sst, sparse_index)
 
     # Finished.  Clear the flushing table state.
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->

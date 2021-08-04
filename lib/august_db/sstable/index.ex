@@ -2,7 +2,7 @@ defmodule SSTable.Index do
   use Agent
 
   @moduledoc """
-  This agent keeps all sparse SSTable indices in memory.
+  ⚡ This agent keeps all sparse SSTable indices in memory. ⚡
   """
 
   def start_link(initial_value) do
@@ -12,7 +12,7 @@ defmodule SSTable.Index do
   @doc """
   Retrieve the sparse index for a given SSTable.
   """
-  def get(sst_filename) do
+  def fetch(sst_filename) do
     Agent.get(__MODULE__, fn map ->
       case Map.get(map, sst_filename) do
         nil -> nil
@@ -22,9 +22,10 @@ defmodule SSTable.Index do
   end
 
   @doc """
-  Saves a sparse index into memory.  It can be queried by its associated SSTable filename.
+  Saves a sparse index into memory.  It can be queried by its associated
+  SSTable filename.
   """
-  def update(sst_filename, sparse_index) do
+  def remember(sst_filename, sparse_index) do
     Agent.update(__MODULE__, fn map -> Map.put(map, sst_filename, sparse_index) end)
   end
 
