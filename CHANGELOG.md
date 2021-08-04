@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.3.0](https://github.com/Terkwood/AugustDB/compare/v0.2.0...v0.3.0) (2021-08-04)
+
+
+### ⚠ BREAKING CHANGES
+
+* use sparse index on SSTables (#74)
+
+### Features
+
+* keep sparse SSTable indices in memory ([#76](https://github.com/Terkwood/AugustDB/issues/76)) ([212f506](https://github.com/Terkwood/AugustDB/commit/212f5062e7088a81b4a75437594dfd8cc84a3f51))
+* use sparse index on SSTables ([#74](https://github.com/Terkwood/AugustDB/issues/74)) ([5c17d7d](https://github.com/Terkwood/AugustDB/commit/5c17d7df873b83fbb603f2693fb71208841c4c52))
+
+
+### Bug Fixes
+
+* gag stdout when compaction is no-op ([1e994aa](https://github.com/Terkwood/AugustDB/commit/1e994aafd985af9f61665a4cbc52defd65b036ca))
+
 ## [0.2.0](https://github.com/Terkwood/AugustDB/compare/v0.1.1...v0.2.0) (2021-08-03)
 
 
