@@ -9,7 +9,7 @@ defmodule SSTable.Compaction do
   Run compaction on all SSTables, generating a Sorted String Table file
   (.sst) and an erlang binary representation of its index (key to byte
   offset) as a `.idx` file.  The index is sparse, having only one entry
-  per `SSTable.Index.bytes_per_entry` bytes.
+  per `SSTable.Settings.index_chunk_size` bytes.
   """
   def run do
     old_sst_paths = Enum.sort(Path.wildcard("*.sst"))
@@ -18,13 +18,19 @@ defmodule SSTable.Compaction do
       :noop ->
         :noop
 
-      new_sst_idx ->
+      {sst_filename, sparse_index} ->
         for p <- old_sst_paths do
           File.rm!(p)
           File.rm!(hd(String.split(p, ".sst")) <> ".idx")
         end
 
-        new_sst_idx
+        # save the new index into main memory
+        SSTable.Index.remember(sst_filename, sparse_index)
+
+        # evict all the defunct indices from main memory
+        SSTable.Index.evict()
+
+        sst_filename
     end
   end
 
@@ -43,10 +49,8 @@ defmodule SSTable.Compaction do
     end
 
     def handle_info(:work, state) do
-      case SSTable.Compaction.run() do
-        {sst, _idx} -> IO.puts("Compacted #{sst}")
-        _ -> nil
-      end
+      compacted_sst_filename = SSTable.Compaction.run()
+      IO.puts("Compacted #{compacted_sst_filename}")
 
       # Do it again
       schedule_work()
@@ -129,7 +133,7 @@ defmodule SSTable.Compaction do
         index_path = hd(String.split(output_path, ".sst")) <> ".idx"
         File.write!(index_path, index_binary)
 
-        {output_path, index_path}
+        {output_path, index}
     end
   end
 
@@ -138,7 +142,7 @@ defmodule SSTable.Compaction do
   end
 
   import SSTable.Write
-  @bytes_per_entry SSTable.Index.bytes_per_entry()
+  @index_chunk_size SSTable.Settings.index_chunk_size()
   defp compare_and_write(many_kv_devices_offsets, outfile, %IndexAcc{
          index: index,
          current_offset: index_bytes,
@@ -167,7 +171,7 @@ defmodule SSTable.Compaction do
     should_write_sparse_index_entry =
       case last_offset do
         nil -> true
-        lbp when lbp + @bytes_per_entry < index_bytes -> true
+        lbp when lbp + @index_chunk_size < index_bytes -> true
         _too_soon -> false
       end
 
