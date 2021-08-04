@@ -49,8 +49,13 @@ defmodule SSTable.Compaction do
     end
 
     def handle_info(:work, state) do
-      compacted_sst_filename = SSTable.Compaction.run()
-      IO.puts("Compacted #{compacted_sst_filename}")
+      case SSTable.Compaction.run() do
+        :noop ->
+          nil
+
+        compacted_sst_filename ->
+          IO.puts("Compacted #{compacted_sst_filename}")
+      end
 
       # Do it again
       schedule_work()
