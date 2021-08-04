@@ -13,7 +13,12 @@ defmodule SSTable.Index do
   Retrieve the sparse index for a given SSTable.
   """
   def get(sst_filename) do
-    raise "todo"
+    Agent.get(__MODULE__, fn map ->
+      case Map.get(map, sst_filename) do
+        nil -> nil
+        index -> index
+      end
+    end)
   end
 
   @doc """
