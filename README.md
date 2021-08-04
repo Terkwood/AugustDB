@@ -16,20 +16,32 @@ We use phoenix to expose a REST API (PUT, GET, DEL) for creating, reading, updat
 
 ### SSTable Format
 
-This is the specification for [binary SSTables](https://github.com/Terkwood/AugustDB/issues/51).
+This is the specification for binary SSTables as implemented in [issue #51](https://github.com/Terkwood/AugustDB/issues/51).
 
-#### value records 
+#### Value records 
 
 1. Length of key in bytes
 2. Length of value in bytes
 3. Raw key, not escaped
 4. Raw value, not escaped
 
-#### tombstone records
+#### Tombstone records
 
 1. Length of key in bytes
 2. `2**32 - 1` to indicate tombstone
 3. Raw key, not escaped
+
+#### Example in hex
+
+This SST file demonstrates the following map of keys to values:
+
+- hey: now
+- no: yes
+- one: *TOMBSTONE*
+- three: four
+
+![binary-sstable-hex](https://user-images.githubusercontent.com/38859656/128165328-736694c2-4342-4a66-b0bb-5e27525902db.png)
+
 
 ### Making HTTP calls
 
