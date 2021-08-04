@@ -24,13 +24,22 @@ defmodule SSTable.Index do
   @doc """
   Saves a sparse index into memory.  It can be queried by its associated SSTable filename.
   """
-  def put(sst_filename, sparse_index) do
-    raise "todo"
+  def update(sst_filename, sparse_index) do
+    Agent.update(__MODULE__, fn map -> Map.put(map, sst_filename, sparse_index) end)
   end
 
   @doc """
   Load all sparse indices from disk and save them into main memory.
   """
   def load_all do
+    raise "todo"
+  end
+
+  @doc """
+  Scan the filesystem and figure out which indices no longer exist,
+  then remove them from agent memory.
+  """
+  def evict do
+    raise "todo"
   end
 end
