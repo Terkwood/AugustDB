@@ -33,7 +33,11 @@ defmodule SSTable.Index do
   Load all sparse indices from disk and save them into main memory.
   """
   def load_all do
-    raise "todo"
+    for idx_p <- Path.wildcard("*.idx") do
+      sparse_index = :erlang.binary_to_term(File.read!(idx_p))
+      sst_filename = "#{hd(String.split(idx_p, ".idx"))}.sst"
+      remember(sst_filename, sparse_index)
+    end
   end
 
   @doc """
