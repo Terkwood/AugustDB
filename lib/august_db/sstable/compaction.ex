@@ -18,13 +18,19 @@ defmodule SSTable.Compaction do
       :noop ->
         :noop
 
-      new_sst_idx ->
+      {sst_filename, sparse_index} ->
         for p <- old_sst_paths do
           File.rm!(p)
           File.rm!(hd(String.split(p, ".sst")) <> ".idx")
         end
 
-        new_sst_idx
+        # save the new index into main memory
+        SSTable.Index.remember(sst_filename, sparse_index)
+
+        # evict all the defunct indices from main memory
+        SSTable.Index.evict()
+
+        {sst_filename, sparse_index}
     end
   end
 
@@ -129,7 +135,7 @@ defmodule SSTable.Compaction do
         index_path = hd(String.split(output_path, ".sst")) <> ".idx"
         File.write!(index_path, index_binary)
 
-        {output_path, index_path}
+        {output_path, index}
     end
   end
 
