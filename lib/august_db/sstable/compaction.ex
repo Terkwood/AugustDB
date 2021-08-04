@@ -9,7 +9,7 @@ defmodule SSTable.Compaction do
   Run compaction on all SSTables, generating a Sorted String Table file
   (.sst) and an erlang binary representation of its index (key to byte
   offset) as a `.idx` file.  The index is sparse, having only one entry
-  per `SSTable.Index.bytes_per_entry` bytes.
+  per `SSTable.Settings.index_chunk_size` bytes.
   """
   def run do
     old_sst_paths = Enum.sort(Path.wildcard("*.sst"))
@@ -138,7 +138,7 @@ defmodule SSTable.Compaction do
   end
 
   import SSTable.Write
-  @bytes_per_entry SSTable.Index.bytes_per_entry()
+  @index_chunk_size SSTable.Settings.index_chunk_size()
   defp compare_and_write(many_kv_devices_offsets, outfile, %IndexAcc{
          index: index,
          current_offset: index_bytes,
@@ -167,7 +167,7 @@ defmodule SSTable.Compaction do
     should_write_sparse_index_entry =
       case last_offset do
         nil -> true
-        lbp when lbp + @bytes_per_entry < index_bytes -> true
+        lbp when lbp + @index_chunk_size < index_bytes -> true
         _too_soon -> false
       end
 

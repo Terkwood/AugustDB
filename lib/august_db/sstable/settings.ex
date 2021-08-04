@@ -7,4 +7,14 @@ defmodule SSTable.Settings do
   def tombstone do
     @t
   end
+
+  @index_chunk_size 4 * 1024
+  @doc """
+  Defines how sparse the index file should be.
+  The application will only write one `key -> offset`
+  value per this many bytes.
+  """
+  def index_chunk_size do
+    @index_chunk_size
+  end
 end

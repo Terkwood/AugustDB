@@ -71,7 +71,7 @@ defmodule Memtable do
     CommitLog.new()
 
     ## Write the current memtable to disk in a binary format
-    SSTable.dump(flushing)
+    {flushed_sst, flushed_idx} = SSTable.dump(flushing)
 
     # Finished.  Clear the flushing table state.
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->

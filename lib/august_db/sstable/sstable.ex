@@ -62,16 +62,18 @@ defmodule SSTable do
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
 
     time = :erlang.system_time()
-    table_fname = new_filename(time)
+    sst_path = new_filename(time)
 
-    {:ok, sst_out_file} = :file.open(table_fname, [:raw, :append])
+    {:ok, sst_out_file} = :file.open(sst_path, [:raw, :append])
 
     sparse_index = kvs |> write_sstable_and_index(sst_out_file)
 
     index_path = "#{time}.idx"
     File.write!(index_path, :erlang.term_to_binary(sparse_index))
 
-    IO.puts("Dumped SSTable to #{table_fname}")
+    IO.puts("Dumped SSTable to #{sst_path}")
+
+    {sst_path, index_path}
   end
 
   def new_filename(time_name \\ :erlang.system_time()) do
@@ -174,14 +176,14 @@ defmodule SSTable do
 
   import SSTable.Write
 
-  @bytes_per_entry SSTable.Index.bytes_per_entry()
+  @index_chunk_size SSTable.Settings.index_chunk_size()
   defp write_sstable_and_index([{key, value} | rest], device, {byte_pos, idx, last_byte_pos}) do
     segment_size = write_kv(key, value, device)
 
     should_write_sparse_index_entry =
       case last_byte_pos do
         nil -> true
-        lbp when lbp + @bytes_per_entry < byte_pos -> true
+        lbp when lbp + @index_chunk_size < byte_pos -> true
         _too_soon -> false
       end
 
