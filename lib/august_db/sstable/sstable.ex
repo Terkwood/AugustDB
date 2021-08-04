@@ -93,11 +93,8 @@ defmodule SSTable do
   end
 
   @tombstone tombstone()
-  defp query(key, sst_file_or_timestamp) do
-    file_timestamp = hd(String.split("#{sst_file_or_timestamp}", ".sst"))
-
-    {:ok, index_bin} = File.read("#{file_timestamp}.idx")
-    index = :erlang.binary_to_term(index_bin)
+  defp query(key, sst_filename) when is_binary(sst_filename) do
+    index = SSTable.Index.fetch(sst_filename)
 
     nearest_offset =
       case find_nearest_offset(index, key) do
@@ -110,7 +107,7 @@ defmodule SSTable do
         :none
 
       offset ->
-        {:ok, sst} = :file.open("#{file_timestamp}.sst", [:read, :raw])
+        {:ok, sst} = :file.open(sst_filename, [:read, :raw])
 
         out = keep_reading(key, sst, offset)
 
