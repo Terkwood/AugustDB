@@ -30,7 +30,7 @@ defmodule SSTable.Compaction do
         # evict all the defunct indices from main memory
         SSTable.Index.evict()
 
-        {sst_filename, sparse_index}
+        sst_filename
     end
   end
 
@@ -49,10 +49,8 @@ defmodule SSTable.Compaction do
     end
 
     def handle_info(:work, state) do
-      case SSTable.Compaction.run() do
-        {sst, _idx} -> IO.puts("Compacted #{sst}")
-        _ -> nil
-      end
+      compacted_sst_filename = SSTable.Compaction.run()
+      IO.puts("Compacted #{compacted_sst_filename}")
 
       # Do it again
       schedule_work()
