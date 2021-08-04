@@ -45,6 +45,18 @@ defmodule SSTable.Index do
   then remove them from agent memory.
   """
   def evict do
-    raise "todo"
+    file_system_ssts = MapSet.new(Path.wildcard("*.sst"))
+
+    agent_ssts =
+      MapSet.new(
+        Agent.get(
+          __MODULE__,
+          &Map.keys(&1)
+        )
+      )
+
+    Agent.update(__MODULE__, fn map ->
+      Map.drop(map, MapSet.to_list(MapSet.difference(agent_ssts, file_system_ssts)))
+    end)
   end
 end
