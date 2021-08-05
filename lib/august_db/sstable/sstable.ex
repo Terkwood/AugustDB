@@ -112,6 +112,8 @@ defmodule SSTable do
 
         {:ok, gzipped_chunk} = :file.pread(sst, offset + 4, gzipped_chunk_size)
 
+        chunk = :zlib.gunzip(gzipped_chunk)
+
         out = keep_reading(key, sst, offset)
 
         :file.close(sst)
@@ -120,7 +122,27 @@ defmodule SSTable do
     end
   end
 
-  defp keep_reading(key, sst, offset) do
+  @tombstone SSTable.Settings.tombstone()
+  defp keep_reading(key, chunk) do
+    case chunk do
+      <<next_key_len::32, next_value_len_tombstone::32, r::binary>> ->
+        <<next_key::binary-size(next_key_len), s::binary>> = r
+
+        if next_key == key do
+          {key,
+           case next_value_len_tombstone do
+             t when t == @tombstone ->
+               :tombstone
+
+             vl ->
+               <<next_value::binary-size(vl)>> = s
+               next_value
+           end}
+        end
+    end
+  end
+
+  defp keep_reading_device(key, sst, offset) do
     case :file.pread(sst, offset, kv_length_bytes()) do
       {:ok, l} ->
         <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
