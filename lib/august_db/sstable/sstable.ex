@@ -61,7 +61,7 @@ defmodule SSTable do
 
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
 
-    gzipped_chunks = SSTable.Zip.create_gzipped_chunks(kvs)
+    gzipped_chunks = SSTable.Zip.zip(kvs)
 
     time = :erlang.system_time()
     sst_path = new_filename(time)
