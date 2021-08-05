@@ -92,6 +92,7 @@ defmodule SSTable do
   end
 
   @tombstone tombstone()
+  @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
   defp query(key, sst_filename) when is_binary(sst_filename) do
     index = SSTable.Index.fetch(sst_filename)
 
@@ -108,10 +109,10 @@ defmodule SSTable do
       offset ->
         {:ok, sst} = :file.open(sst_filename, [:read, :raw])
 
-        {:ok, iod} = :file.pread(sst, offset, 4)
-        <<gzipped_chunk_size::32>> = IO.iodata_to_binary(iod)
+        {:ok, iod} = :file.pread(sst, offset, @gzip_length_bytes)
+        <<gzipped_chunk_size::@gzip_length_bytes*8>> = IO.iodata_to_binary(iod)
 
-        {:ok, gzipped_chunk} = :file.pread(sst, offset + 4, gzipped_chunk_size)
+        {:ok, gzipped_chunk} = :file.pread(sst, offset + @gzip_length_bytes, gzipped_chunk_size)
 
         :file.close(sst)
 

@@ -1,4 +1,8 @@
 defmodule SSTable.Settings do
+  def gzip_length_bytes do
+    4
+  end
+
   def kv_length_bytes do
     8
   end
