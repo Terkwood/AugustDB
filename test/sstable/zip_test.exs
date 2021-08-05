@@ -14,8 +14,37 @@ defmodule ZipTest do
     <<chunk_size::32, rest::binary>> = payload
   end
 
-  test "adding more data eventually produces an indexed blob" do
-    input = [
+  test "adding more data produces an index with multiple entries" do
+    input = big_data()
+
+    {payload, index} = zip(input)
+
+    assert Enum.count(index) > 1
+  end
+
+  test "zip reduces final payload size vs uncompressed binary KV format" do
+    input = big_data()
+
+    {payload, index} = zip(input)
+
+    size_of_payload = byte_size(payload)
+
+    size_of_raw_kvs =
+      input
+      |> Enum.reduce(0, fn {k, v}, acc -> 8 + byte_size(SSTable.KV.to_binary(k, v)) + acc end)
+
+    assert size_of_payload < size_of_raw_kvs
+  end
+
+  @doc """
+  Thanks to https://dev.to/diogoko/random-strings-in-elixir-e8i
+  """
+  def rand_string do
+    for _ <- 1..1024, into: "", do: <<Enum.random('0123456789abcdef')>>
+  end
+
+  defp big_data do
+    [
       {rand_string(), rand_string()},
       {rand_string(), rand_string()},
       {rand_string(), rand_string()},
@@ -35,25 +64,5 @@ defmodule ZipTest do
       {rand_string(), rand_string()},
       {rand_string(), rand_string()}
     ]
-
-    {payload, index} = zip(input)
-
-    assert byte_size(payload) > 0
-    assert Enum.count(index) > 1
-
-    size_of_payload = byte_size(payload)
-
-    size_of_raw_kvs =
-      input
-      |> Enum.reduce(0, fn {k, v}, acc -> 8 + byte_size(SSTable.KV.to_binary(k, v)) + acc end)
-
-    assert size_of_payload < size_of_raw_kvs
-  end
-
-  @doc """
-  Thanks to https://dev.to/diogoko/random-strings-in-elixir-e8i
-  """
-  def rand_string do
-    for _ <- 1..1024, into: "", do: <<Enum.random('0123456789abcdef')>>
   end
 end
