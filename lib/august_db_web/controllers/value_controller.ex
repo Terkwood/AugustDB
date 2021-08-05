@@ -28,9 +28,6 @@ defmodule AugustDbWeb.ValueController do
 
           value when is_binary(value) ->
             render(conn, "show.json", %{value: value})
-
-          _ ->
-            send_422(conn)
         end
     end
   end
