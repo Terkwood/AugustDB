@@ -108,17 +108,16 @@ defmodule SSTable do
       offset ->
         {:ok, sst} = :file.open(sst_filename, [:read, :raw])
 
-        {:ok, <<gzipped_chunk_size::32>>} = :file.pread(sst, offset, 4)
+        {:ok, iod} = :file.pread(sst, offset, 4)
+        <<gzipped_chunk_size::32>> = IO.iodata_to_binary(iod)
 
         {:ok, gzipped_chunk} = :file.pread(sst, offset + 4, gzipped_chunk_size)
 
-        chunk = :zlib.gunzip(gzipped_chunk)
-
-        out = keep_reading(key, sst, offset)
-
         :file.close(sst)
 
-        out
+        chunk = :zlib.gunzip(IO.iodata_to_binary(gzipped_chunk))
+
+        keep_reading(key, chunk)
     end
   end
 
@@ -128,16 +127,29 @@ defmodule SSTable do
       <<next_key_len::32, next_value_len_tombstone::32, r::binary>> ->
         <<next_key::binary-size(next_key_len), s::binary>> = r
 
-        if next_key == key do
-          {key,
-           case next_value_len_tombstone do
-             t when t == @tombstone ->
-               :tombstone
+        {value_or_tombstone, next_vt_len} =
+          case next_value_len_tombstone do
+            t when t == @tombstone ->
+              {:tombstone, 0}
 
-             vl ->
-               <<next_value::binary-size(vl)>> = s
-               next_value
-           end}
+            vl ->
+              <<next_value::binary-size(vl), _::binary>> = IO.iodata_to_binary(s)
+              {next_value, vl}
+          end
+
+        if next_key == key do
+          {key, value_or_tombstone}
+        else
+          case next_vt_len do
+            0 ->
+              # no need to skip tombstone
+              keep_reading(key, s)
+
+            n ->
+              # skip the next value, then keep reading
+              <<_::binary-size(n), u::binary>> = s
+              keep_reading(key, u)
+          end
         end
     end
   end
@@ -172,7 +184,7 @@ defmodule SSTable do
             :none
 
           _ignore ->
-            keep_reading(
+            keep_reading_device(
               key,
               sst,
               offset + kv_length_bytes() + key_len + next_value_adjusted_len
