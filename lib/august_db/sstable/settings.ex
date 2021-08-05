@@ -15,6 +15,9 @@ defmodule SSTable.Settings do
   value per this many bytes.
   """
   def index_chunk_size do
-    @index_chunk_size
+    # ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️HACKED! ⚠️⚠️⚠️⚠️⚠️
+    # ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️HACKED! ⚠️⚠️⚠️⚠️⚠️
+    # ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️HACKED! ⚠️⚠️⚠️⚠️⚠️
+    250
   end
 end

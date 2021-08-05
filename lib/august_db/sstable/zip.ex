@@ -6,10 +6,6 @@ defmodule SSTable.Zip do
                                                    {current_chunk, all_chunks, current_byte_pos,
                                                     last_byte_pos, idx, last_key} ->
         kv_bin = SSTable.KV.to_binary(key, value)
-        gz_payload = :zlib.gzip(kv_bin)
-        payload_size = byte_size(gz_payload)
-
-        next_byte_pos = current_byte_pos + payload_size
 
         keep_last_key =
           case last_key do
@@ -18,10 +14,10 @@ defmodule SSTable.Zip do
           end
 
         if last_byte_pos + payload_size >= SSTable.Settings.index_chunk_size() do
-          {<<>>, [current_chunk <> gz_payload | all_chunks], next_byte_pos, current_byte_pos,
+          {<<>>, [gz_payload | all_chunks], next_byte_pos, current_byte_pos,
            [{key, last_byte_pos} | idx], nil}
         else
-          {current_chunk <> gz_payload, all_chunks, next_byte_pos, last_byte_pos, idx,
+          {current_chunk <> more_payload, all_chunks, next_byte_pos, last_byte_pos, idx,
            keep_last_key}
         end
       end)
