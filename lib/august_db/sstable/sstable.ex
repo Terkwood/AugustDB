@@ -108,6 +108,10 @@ defmodule SSTable do
       offset ->
         {:ok, sst} = :file.open(sst_filename, [:read, :raw])
 
+        {:ok, <<gzipped_chunk_size::32>>} = :file.pread(sst, offset, 4)
+
+        {:ok, gzipped_chunk} = :file.pread(sst, offset + 4, gzipped_chunk_size)
+
         out = keep_reading(key, sst, offset)
 
         :file.close(sst)
