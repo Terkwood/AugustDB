@@ -9,16 +9,18 @@ defmodule ZipTest do
   end
 
   test "back and forth" do
-    {payload, index} = zip([{"maybe", "not"}, {"no", "yes"}])
+    {payload, index} = zip([{"maybe", "knot"}, {"no", "yes"}])
 
     <<chunk_size::32, rest::binary>> = payload
 
     IO.inspect(chunk_size)
 
-    <<first_key_size::32, first_value_size::32, rest_plain::binary>> = :zlib.gunzip(rest)
+    <<first_key_size::32, first_value_size::32, rest_unzipped::binary>> = :zlib.gunzip(rest)
+
     IO.inspect(index)
-    IO.inspect(first_key_size)
-    IO.inspect(first_value_size)
+    assert first_key_size == byte_size("maybe")
+    assert first_value_size == byte_size("knot")
+    IO.inspect(is_binary(maybe))
   end
 
   test "adding more data produces an index with multiple entries" do
