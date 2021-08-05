@@ -1,5 +1,29 @@
 defmodule SSTable.Zip do
-  def create_gzipped_chunks(kvs) do
+  defmodule Index do
+    defstruct [:key, :offset]
+  end
+
+  defmodule ChunkAccum do
+    defstruct [:payload, :last_index, :current_offset]
+
+    def empty do
+      %__MODULE__{payload: <<>>, last_index: nil, current_offset: 0}
+    end
+  end
+
+  def zip(kvs) do
+    kvs
+    |> Enum.reduce(ChunkAccum.empty(), fn %ChunkAccum{
+                                            payload: payload,
+                                            last_index: last_index,
+                                            current_offset: current_offset
+                                          },
+                                          acc ->
+      raise "todo"
+    end)
+  end
+
+  def create_gzipped_chunks_fail(kvs) do
     {leftover, all_chunks, _, last_byte_pos, idx, last_key} =
       kvs
       |> Enum.reduce({<<>>, [], 0, 0, [], nil}, fn {key, value},
