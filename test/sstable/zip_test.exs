@@ -4,14 +4,21 @@ defmodule ZipTest do
   import SSTable.Zip
 
   test "payload accumulates for small inputs" do
-    {payload, index} = zip([{"a", "b"}, {"aa", "bb"}])
+    {payload, index} = zip([{"a", "b"}, {"yaa", "bb"}])
     assert byte_size(payload) > 0
   end
 
   test "back and forth" do
-    {payload, index} = zip([{"no", "yes"}, {"maybe", "not"}])
+    {payload, index} = zip([{"maybe", "not"}, {"no", "yes"}])
 
     <<chunk_size::32, rest::binary>> = payload
+
+    IO.inspect(chunk_size)
+
+    <<first_key_size::32, first_value_size::32, rest_plain::binary>> = :zlib.gunzip(rest)
+    IO.inspect(index)
+    IO.inspect(first_key_size)
+    IO.inspect(first_value_size)
   end
 
   test "adding more data produces an index with multiple entries" do
