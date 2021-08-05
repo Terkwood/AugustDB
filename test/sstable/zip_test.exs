@@ -4,8 +4,14 @@ defmodule ZipTest do
   import SSTable.Zip
 
   test "payload accumulates for small inputs" do
-    result = zip([{"a", "b"}, {"aa", "bb"}])
-    assert byte_size(result.payload) > 0
+    {payload, index} = zip([{"a", "b"}, {"aa", "bb"}])
+    assert byte_size(payload) > 0
+  end
+
+  test "back and forth" do
+    {payload, index} = zip([{"no", "yes"}, {"maybe", "not"}])
+
+    <<chunk_size::32, rest::binary>> = payload
   end
 
   test "adding more data eventually produces an indexed blob" do
@@ -30,10 +36,18 @@ defmodule ZipTest do
       {rand_string(), rand_string()}
     ]
 
-    result = zip(input)
+    {payload, index} = zip(input)
 
-    assert byte_size(result.payload) > 0
-    assert Enum.count(result.index) > 1
+    assert byte_size(payload) > 0
+    assert Enum.count(index) > 1
+
+    size_of_payload = byte_size(payload)
+
+    size_of_raw_kvs =
+      input
+      |> Enum.reduce(0, fn {k, v}, acc -> 8 + byte_size(SSTable.KV.to_binary(k, v)) + acc end)
+
+    assert size_of_payload < size_of_raw_kvs
   end
 
   @doc """

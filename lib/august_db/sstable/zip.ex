@@ -64,14 +64,12 @@ defmodule SSTable.Zip do
          end) do
       c when byte_size(c.payload) == 0 ->
         gzip_one_chunk = :zlib.gzip(c.current_chunk)
+        chunk_size = <<byte_size(gzip_one_chunk)::32>>
 
-        %ChunkAccum{
-          payload: gzip_one_chunk,
-          index: [{c.chunk_key, c.chunk_offset} | c.index]
-        }
+        {chunk_size <> gzip_one_chunk, [{c.chunk_key, c.chunk_offset} | c.index]}
 
       c ->
-        c
+        {c.payload, c.index}
     end
   end
 end
