@@ -61,17 +61,14 @@ defmodule SSTable do
 
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
 
-    gzipped_chunks = SSTable.Zip.zip(kvs)
+    {payload, sparse_index} = SSTable.Zip.zip(kvs)
 
     time = :erlang.system_time()
     sst_path = new_filename(time)
+    idx_path = "#{time}.idx"
 
-    {:ok, sst_out_file} = :file.open(sst_path, [:raw, :append])
-
-    sparse_index = kvs |> write_sstable_and_index(sst_out_file)
-
-    index_path = "#{time}.idx"
-    File.write!(index_path, :erlang.term_to_binary(sparse_index))
+    File.write!(sst_path, payload)
+    File.write!(idx_path, :erlang.term_to_binary(sparse_index))
 
     IO.puts("Dumped SSTable to #{sst_path}")
 
