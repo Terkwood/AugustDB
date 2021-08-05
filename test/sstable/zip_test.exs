@@ -17,10 +17,13 @@ defmodule ZipTest do
 
     <<first_key_size::32, first_value_size::32, rest_unzipped::binary>> = :zlib.gunzip(rest)
 
-    IO.inspect(index)
     assert first_key_size == byte_size("maybe")
     assert first_value_size == byte_size("knot")
-    IO.inspect(is_binary(maybe))
+    <<maybe::binary-size(5), knot::binary-size(4), _::binary>> = rest_unzipped
+    assert maybe == "maybe"
+    assert knot == "knot"
+
+    # KEEP GOING!
   end
 
   test "adding more data produces an index with multiple entries" do
