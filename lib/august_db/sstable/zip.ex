@@ -11,7 +11,7 @@ defmodule SSTable.Zip do
         payload: <<>>,
         current_chunk: <<>>,
         chunk_key: nil,
-        chunk_offset: 0,
+        chunk_offset: nil,
         index: [],
         current_offset: 0
       }
@@ -45,7 +45,7 @@ defmodule SSTable.Zip do
              %ChunkAccum{
                payload: payload <> gzip_chunk,
                current_chunk: <<>>,
-               index: [next_chunk_key | index],
+               index: [{next_chunk_key, next_chunk_offset} | index],
                chunk_key: nil,
                chunk_offset: nil,
                current_offset: current_offset + byte_size(gzip_chunk)
