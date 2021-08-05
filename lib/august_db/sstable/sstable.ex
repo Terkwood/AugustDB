@@ -124,6 +124,9 @@ defmodule SSTable do
   @tombstone SSTable.Settings.tombstone()
   defp keep_reading(key, chunk) do
     case chunk do
+      "" ->
+        :none
+
       <<next_key_len::32, next_value_len_tombstone::32, r::binary>> ->
         <<next_key::binary-size(next_key_len), s::binary>> = r
 
@@ -138,7 +141,7 @@ defmodule SSTable do
           end
 
         if next_key == key do
-          {key, value_or_tombstone}
+          value_or_tombstone
         else
           case next_vt_len do
             0 ->
