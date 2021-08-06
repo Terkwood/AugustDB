@@ -73,6 +73,17 @@ defmodule SSTable.Zip do
 
           {chunk_size <> gzip_one_chunk, [{c.chunk_key, c.chunk_offset} | c.index]}
 
+        %ChunkAccum{
+          payload: payload,
+          current_chunk: current_chunk,
+          index: index,
+          chunk_key: chunk_key,
+          chunk_offset: chunk_offset,
+          current_offset: current_offset
+        }
+        when byte_size(current_chunk) > 0 ->
+          raise "todo"
+
         c ->
           {c.payload, c.index}
       end
