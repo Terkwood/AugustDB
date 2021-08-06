@@ -10,7 +10,7 @@ All writes are first written to a commit log, protecting against crashes.
 
 Newly written values are stored in a memtable backed by [:gb_trees](https://erlang.org/doc/man/gb_trees.html).
 
-We define a binary SSTable format.
+[We define a binary SSTable format](#sstable-format).
 
 We use phoenix to expose a REST API (PUT, GET, DEL) for creating, reading, updating, and deleting (for now) string resources using `Content-Type: application/json`. [Support for application/octet-stream](https://github.com/Terkwood/AugustDB/issues/24) is forthcoming.
 
