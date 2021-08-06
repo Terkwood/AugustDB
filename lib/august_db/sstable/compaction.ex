@@ -144,7 +144,6 @@ defmodule SSTable.Compaction do
             nil
           )
 
-        IO.inspect(index)
         Enum.map(many_devices, &:file.close(&1))
         :ok = :file.close(output_sst)
 
@@ -317,7 +316,6 @@ defmodule SSTable.Compaction do
 
       vl ->
         <<value::binary-size(vl), etc3::binary>> = etc2
-        IO.puts("- #{key} #{String.slice(value, 0, 10)}")
         {{key, value}, device, %Chunk{unzipped: etc3, gz_offset: gz_offset}}
     end
   end
