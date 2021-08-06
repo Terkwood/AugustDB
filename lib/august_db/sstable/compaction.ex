@@ -243,12 +243,11 @@ defmodule SSTable.Compaction do
 
     wip_output = output_payload <> kv_bin
 
-    chunk_size = byte_size(wip_output)
-
     next_chunk =
       if byte_size(wip_output) > SSTable.Settings.unzipped_data_chunk() do
-        write_chunk(wip_output, output_device)
-        %Chunk{unzipped: <<>>, gz_offset: output_gz_offset + chunk_size}
+        gz_chunk = :zlib.gzip(wip_output)
+        write_chunk(gz_chunk, output_device)
+        %Chunk{unzipped: <<>>, gz_offset: output_gz_offset + byte_size(gz_chunk)}
       else
         %Chunk{unzipped: wip_output, gz_offset: output_gz_offset}
       end
@@ -395,6 +394,7 @@ defmodule SSTable.Compaction do
          unzipped: payload,
          gz_offset: gz_offset
        }) do
+    IO.puts("we have payload bytes 🎣")
     <<key_len::@key_length_bytes*8, value_len::@value_length_bytes*8, etc1::binary>> = payload
 
     <<key::binary-size(key_len), etc2::binary>> = etc1
