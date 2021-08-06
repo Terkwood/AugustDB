@@ -14,7 +14,7 @@ defmodule SSTable.Compaction do
   def run do
     old_sst_paths = Enum.sort(Path.wildcard("*.sst"))
 
-    case merge(old_sst_paths) do
+    case merge_gz_chunks(old_sst_paths) do
       :noop ->
         :noop
 
@@ -118,8 +118,7 @@ defmodule SSTable.Compaction do
 
         many_kv_devices_chunks =
           many_devices
-          |> Enum.map(&{&1, 0})
-          |> Enum.map(fn {device, chunk} ->
+          |> Enum.map(fn device ->
             read_next_kv(device, %Chunk{unzipped: <<>>, gz_offset: 0})
           end)
           |> Enum.filter(fn maybe_eof ->
@@ -134,10 +133,16 @@ defmodule SSTable.Compaction do
         {:ok, output_sst} = :file.open(output_path, [:raw, :append])
 
         index =
-          compare_and_write_chunks(many_kv_devices_chunks, output_sst, %IndexAcc{}, %Chunk{
-            unzipped: <<>>,
-            gz_offset: 0
-          })
+          compare_and_write_chunks(
+            many_kv_devices_chunks,
+            output_sst,
+            [],
+            %Chunk{
+              unzipped: <<>>,
+              gz_offset: 0
+            },
+            nil
+          )
 
         Enum.map(many_devices, &:file.close(&1))
         :ok = :file.close(output_sst)
@@ -150,50 +155,50 @@ defmodule SSTable.Compaction do
     end
   end
 
-  defp merge(paths) when is_list(paths) do
-    case paths do
-      [] ->
-        :noop
+  # defp merge(paths) when is_list(paths) do
+  #   case paths do
+  #     [] ->
+  #       :noop
 
-      [_one] ->
-        :noop
+  #     [_one] ->
+  #       :noop
 
-      many_paths ->
-        output_path = SSTable.new_filename()
+  #     many_paths ->
+  #       output_path = SSTable.new_filename()
 
-        many_devices =
-          Enum.map(many_paths, fn p ->
-            {:ok, f} = :file.open(p, [:read, :raw])
-            f
-          end)
+  #       many_devices =
+  #         Enum.map(many_paths, fn p ->
+  #           {:ok, f} = :file.open(p, [:read, :raw])
+  #           f
+  #         end)
 
-        {:ok, output_sst} = :file.open(output_path, [:raw, :append])
+  #       {:ok, output_sst} = :file.open(output_path, [:raw, :append])
 
-        many_kv_devices =
-          many_devices
-          |> Enum.map(&{&1, 0})
-          |> Enum.map(fn {device, offset} ->
-            read_one(device, offset)
-          end)
-          |> Enum.filter(fn maybe_eof ->
-            case maybe_eof do
-              :eof -> false
-              _ -> true
-            end
-          end)
+  #       many_kv_devices =
+  #         many_devices
+  #         |> Enum.map(&{&1, 0})
+  #         |> Enum.map(fn {device, offset} ->
+  #           read_one(device, offset)
+  #         end)
+  #         |> Enum.filter(fn maybe_eof ->
+  #           case maybe_eof do
+  #             :eof -> false
+  #             _ -> true
+  #           end
+  #         end)
 
-        index = compare_and_write(many_kv_devices, output_sst, %IndexAcc{})
+  #       index = compare_and_write(many_kv_devices, output_sst, %IndexAcc{})
 
-        Enum.map(many_devices, &:file.close(&1))
-        :ok = :file.close(output_sst)
+  #       Enum.map(many_devices, &:file.close(&1))
+  #       :ok = :file.close(output_sst)
 
-        index_binary = :erlang.term_to_binary(index)
-        index_path = hd(String.split(output_path, ".sst")) <> ".idx"
-        File.write!(index_path, index_binary)
+  #       index_binary = :erlang.term_to_binary(index)
+  #       index_path = hd(String.split(output_path, ".sst")) <> ".idx"
+  #       File.write!(index_path, index_binary)
 
-        {output_path, index}
-    end
-  end
+  #       {output_path, index}
+  #   end
+  # end
 
   @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
   @doc """
@@ -211,13 +216,12 @@ defmodule SSTable.Compaction do
     @gzip_length_bytes + payload_size
   end
 
-  import SSTable.Write
-  @index_chunk_size SSTable.Settings.index_chunk_size()
   defp compare_and_write_chunks(
          [],
          _outfile,
-         %IndexAcc{index: index, last_offset: _, current_offset: _},
-         _output_chunk
+         index,
+         _output_chunk,
+         _maybe_first_chunk_key
        ) do
     index
   end
@@ -225,12 +229,9 @@ defmodule SSTable.Compaction do
   defp compare_and_write_chunks(
          many_kv_devices_chunks,
          output_device,
-         %IndexAcc{
-           index: index,
-           current_offset: index_bytes,
-           last_offset: last_offset
-         },
-         %Chunk{unzipped: output_payload, gz_offset: output_gz_offset}
+         index,
+         %Chunk{unzipped: output_payload, gz_offset: output_gz_offset},
+         maybe_first_chunk_key
        )
        when is_list(many_kv_devices_chunks) do
     {the_lowest_key, the_lowest_value} =
@@ -263,59 +264,29 @@ defmodule SSTable.Compaction do
             {higher, d, chunk}
         end
       end)
-  end
-
-  defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do
-    index
-  end
-
-  defp compare_and_write(many_kv_devices_offsets, outfile, %IndexAcc{
-         index: index,
-         current_offset: index_bytes,
-         last_offset: last_offset
-       })
-       when is_list(many_kv_devices_offsets) do
-    {the_lowest_key, the_lowest_value} =
-      many_kv_devices_offsets
-      |> Enum.map(fn {kv, _d, _offset} -> kv end)
-      |> Sort.lowest_most_recent()
-
-    segment_size = write_kv(the_lowest_key, the_lowest_value, outfile)
-
-    next_round =
-      many_kv_devices_offsets
-      |> Enum.map(fn {kv, d, offset} ->
-        case kv do
-          {k, _} when k == the_lowest_key ->
-            read_one(d, offset)
-
-          higher ->
-            {higher, d, offset}
-        end
-      end)
 
     should_write_sparse_index_entry =
-      case last_offset do
-        nil -> true
-        lbp when lbp + @index_chunk_size < index_bytes -> true
+      case next_chunk.unzipped do
+        <<>> -> true
         _too_soon -> false
       end
 
-    next_acc =
+    # if we just started a new chunk, we didn't learn about its
+    # first key until just now...
+    first_chunk_key =
+      case maybe_first_chunk_key do
+        nil -> the_lowest_key
+        keep -> keep
+      end
+
+    # ...and we need first_chunk_key to write the sparse index
+    next_index =
       if should_write_sparse_index_entry do
-        %IndexAcc{
-          current_offset: segment_size + index_bytes,
-          index: [
-            {the_lowest_key, index_bytes} | index
-          ],
-          last_offset: index_bytes
-        }
+        [
+          {first_chunk_key, output_gz_offset} | index
+        ]
       else
-        %IndexAcc{
-          current_offset: segment_size + index_bytes,
-          index: index,
-          last_offset: last_offset
-        }
+        index
       end
 
     next_round
@@ -325,8 +296,71 @@ defmodule SSTable.Compaction do
         _ -> true
       end
     end)
-    |> compare_and_write(outfile, next_acc)
+    |> compare_and_write_chunks(output_device, next_index, next_chunk, first_chunk_key)
   end
+
+  # defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do
+  #   index
+  # end
+
+  # defp compare_and_write(many_kv_devices_offsets, outfile, %IndexAcc{
+  #        index: index,
+  #        current_offset: index_bytes,
+  #        last_offset: last_offset
+  #      })
+  #      when is_list(many_kv_devices_offsets) do
+  #   {the_lowest_key, the_lowest_value} =
+  #     many_kv_devices_offsets
+  #     |> Enum.map(fn {kv, _d, _offset} -> kv end)
+  #     |> Sort.lowest_most_recent()
+
+  #   segment_size = write_kv(the_lowest_key, the_lowest_value, outfile)
+
+  #   next_round =
+  #     many_kv_devices_offsets
+  #     |> Enum.map(fn {kv, d, offset} ->
+  #       case kv do
+  #         {k, _} when k == the_lowest_key ->
+  #           read_one(d, offset)
+
+  #         higher ->
+  #           {higher, d, offset}
+  #       end
+  #     end)
+
+  #   should_write_sparse_index_entry =
+  #     case last_offset do
+  #       nil -> true
+  #       lbp when lbp + @index_chunk_size < index_bytes -> true
+  #       _too_soon -> false
+  #     end
+
+  #   next_acc =
+  #     if should_write_sparse_index_entry do
+  #       %IndexAcc{
+  #         current_offset: segment_size + index_bytes,
+  #         index: [
+  #           {the_lowest_key, index_bytes} | index
+  #         ],
+  #         last_offset: index_bytes
+  #       }
+  #     else
+  #       %IndexAcc{
+  #         current_offset: segment_size + index_bytes,
+  #         index: index,
+  #         last_offset: last_offset
+  #       }
+  #     end
+
+  #   next_round
+  #   |> Enum.filter(fn tuple_or_eof ->
+  #     case tuple_or_eof do
+  #       :eof -> false
+  #       _ -> true
+  #     end
+  #   end)
+  #   |> compare_and_write(outfile, next_acc)
+  # end
 
   @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
   defp read_next_kv(device, %Chunk{unzipped: <<>>, gz_offset: gz_offset}) do
@@ -375,33 +409,33 @@ defmodule SSTable.Compaction do
     end
   end
 
-  defp read_one(device, offset) do
-    case :file.pread(device, offset, kv_length_bytes()) do
-      :eof ->
-        :eof
+  # defp read_one(device, offset) do
+  #   case :file.pread(device, offset, kv_length_bytes()) do
+  #     :eof ->
+  #       :eof
 
-      {:ok, l} ->
-        <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
+  #     {:ok, l} ->
+  #       <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
 
-        case :file.pread(device, offset + kv_length_bytes(), key_len) do
-          {:ok, key_data} ->
-            key = IO.iodata_to_binary(key_data)
+  #       case :file.pread(device, offset + kv_length_bytes(), key_len) do
+  #         {:ok, key_data} ->
+  #           key = IO.iodata_to_binary(key_data)
 
-            case value_len do
-              @tombstone ->
-                next_offset = offset + kv_length_bytes() + key_len
-                {{key, :tombstone}, device, next_offset}
+  #           case value_len do
+  #             @tombstone ->
+  #               next_offset = offset + kv_length_bytes() + key_len
+  #               {{key, :tombstone}, device, next_offset}
 
-              vl ->
-                {:ok, value_data} = :file.pread(device, offset + kv_length_bytes() + key_len, vl)
-                value = IO.iodata_to_binary(value_data)
-                next_offset = offset + kv_length_bytes() + key_len + vl
-                {{key, value}, device, next_offset}
-            end
+  #             vl ->
+  #               {:ok, value_data} = :file.pread(device, offset + kv_length_bytes() + key_len, vl)
+  #               value = IO.iodata_to_binary(value_data)
+  #               next_offset = offset + kv_length_bytes() + key_len + vl
+  #               {{key, value}, device, next_offset}
+  #           end
 
-          :eof ->
-            :eof
-        end
-    end
-  end
+  #         :eof ->
+  #           :eof
+  #       end
+  #   end
+  # end
 end
