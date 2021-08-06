@@ -195,6 +195,22 @@ defmodule SSTable.Compaction do
     end
   end
 
+  @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
+  @doc """
+  Write a gzip length header followed by and a gzipped chunk of k/v pairs
+
+  Return the size of the written data in bytes.
+  """
+  def write_chunk(gz_payload, device) do
+    payload_size = byte_size(gz_payload)
+
+    gz_length_header = <<payload_size::@gzip_length_bytes*8>>
+    :ok = :file.write(device, gz_length_header)
+    :ok = :file.write(device, gz_payload)
+
+    @gzip_length_bytes + payload_size
+  end
+
   import SSTable.Write
   @index_chunk_size SSTable.Settings.index_chunk_size()
   defp compare_and_write_chunks(
@@ -223,7 +239,6 @@ defmodule SSTable.Compaction do
       |> Sort.lowest_most_recent()
 
     kv_bin = SSTable.KV.to_binary(the_lowest_key, the_lowest_value)
-    segment_size = byte_size(kv_bin)
 
     wip_output = output_payload <> kv_bin
 
@@ -231,7 +246,7 @@ defmodule SSTable.Compaction do
 
     next_chunk =
       if byte_size(wip_output) > SSTable.Settings.unzipped_data_chunk() do
-        raise "todo write it, and don't forget the chunk length header"
+        write_chunk(wip_output, output_device)
         %Chunk{unzipped: <<>>, gz_offset: output_gz_offset + chunk_size}
       else
         %Chunk{unzipped: wip_output, gz_offset: output_gz_offset}
