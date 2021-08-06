@@ -1,6 +1,18 @@
 defmodule SSTable.Settings do
+  def gzip_length_bytes do
+    4
+  end
+
   def kv_length_bytes do
-    8
+    key_length_bytes() + value_length_bytes()
+  end
+
+  def key_length_bytes do
+    4
+  end
+
+  def value_length_bytes do
+    4
   end
 
   @t 4_294_967_296 - 1
@@ -16,5 +28,9 @@ defmodule SSTable.Settings do
   """
   def index_chunk_size do
     @index_chunk_size
+  end
+
+  def unzipped_data_chunk do
+    SSTable.Settings.index_chunk_size() * 2
   end
 end

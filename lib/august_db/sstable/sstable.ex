@@ -1,4 +1,35 @@
 defmodule SSTable do
+  @moduledoc """
+  # Specification of Sorted String Table files
+
+  A Sorted String Table contains zero or more _gzipped key/value chunks_.
+
+  ## GZipped key/value chunks
+
+  A _gzip key/value chunk_ follows this binary specification:
+
+  1. Four bytes: length of the gzipped chunk
+  2. Variable length: gzipped chunk of key/value pairs, with tombstones.
+
+  ## Unzipped key/value chunks
+
+  Once unzipped, each key/value chunk contains zero or more key/value records.
+  Each record describes its own length. Some keys may point to
+  tombstones.
+
+  ### Value records
+
+  1. Four bytes: Length of key
+  2. Four bytes: Length of value
+  3. Variable length: Raw key, not escaped
+  4. Variable length: Raw value, not escaped
+
+  ### Tombstone records
+
+  1. Four bytes: Length of key in bytes
+  2. Four bytes: `2^32 - 1` to indicate tombstone
+  3. Variable length: Raw key, not escaped
+  """
   import SSTable.Settings
 
   defstruct [:index, :table]
@@ -61,15 +92,14 @@ defmodule SSTable do
 
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
 
+    {payload, sparse_index} = SSTable.Zip.zip(kvs)
+
     time = :erlang.system_time()
     sst_path = new_filename(time)
+    idx_path = "#{time}.idx"
 
-    {:ok, sst_out_file} = :file.open(sst_path, [:raw, :append])
-
-    sparse_index = kvs |> write_sstable_and_index(sst_out_file)
-
-    index_path = "#{time}.idx"
-    File.write!(index_path, :erlang.term_to_binary(sparse_index))
+    File.write!(sst_path, payload)
+    File.write!(idx_path, :erlang.term_to_binary(sparse_index))
 
     IO.puts("Dumped SSTable to #{sst_path}")
 
@@ -93,6 +123,7 @@ defmodule SSTable do
   end
 
   @tombstone tombstone()
+  @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
   defp query(key, sst_filename) when is_binary(sst_filename) do
     index = SSTable.Index.fetch(sst_filename)
 
@@ -109,53 +140,52 @@ defmodule SSTable do
       offset ->
         {:ok, sst} = :file.open(sst_filename, [:read, :raw])
 
-        out = keep_reading(key, sst, offset)
+        {:ok, iod} = :file.pread(sst, offset, @gzip_length_bytes)
+        <<gzipped_chunk_size::@gzip_length_bytes*8>> = IO.iodata_to_binary(iod)
+
+        {:ok, gzipped_chunk} = :file.pread(sst, offset + @gzip_length_bytes, gzipped_chunk_size)
 
         :file.close(sst)
 
-        out
+        chunk = :zlib.gunzip(IO.iodata_to_binary(gzipped_chunk))
+
+        keep_reading(key, chunk)
     end
   end
 
-  defp keep_reading(key, sst, offset) do
-    case :file.pread(sst, offset, kv_length_bytes()) do
-      {:ok, l} ->
-        <<key_len::32, value_len::32>> = IO.iodata_to_binary(l)
+  @tombstone SSTable.Settings.tombstone()
+  defp keep_reading(key, chunk) do
+    case chunk do
+      "" ->
+        :none
 
-        {:ok, key_bin} = :file.pread(sst, offset + kv_length_bytes(), key_len)
-        next_key = :erlang.iolist_to_binary(key_bin)
+      <<next_key_len::32, next_value_len_tombstone::32, r::binary>> ->
+        <<next_key::binary-size(next_key_len), s::binary>> = r
 
-        next_value_adjusted_len =
-          case value_len do
-            @tombstone -> 0
-            n -> n
+        {value_or_tombstone, next_vt_len} =
+          case next_value_len_tombstone do
+            t when t == @tombstone ->
+              {:tombstone, 0}
+
+            vl ->
+              <<next_value::binary-size(vl), _::binary>> = IO.iodata_to_binary(s)
+              {next_value, vl}
           end
 
-        case next_key do
-          n when n == key ->
-            case value_len do
-              @tombstone ->
-                :tombstone
+        if next_key == key do
+          value_or_tombstone
+        else
+          case next_vt_len do
+            0 ->
+              # no need to skip tombstone
+              keep_reading(key, s)
 
-              vl ->
-                {:ok, value_bin} = :file.pread(sst, offset + kv_length_bytes() + key_len, vl)
-                :erlang.iolist_to_binary(value_bin)
-            end
-
-          n when n > key ->
-            # we've gone too far!  the key isn't in this file
-            :none
-
-          _ignore ->
-            keep_reading(
-              key,
-              sst,
-              offset + kv_length_bytes() + key_len + next_value_adjusted_len
-            )
+            n ->
+              # skip the next value, then keep reading
+              <<_::binary-size(n), u::binary>> = s
+              keep_reading(key, u)
+          end
         end
-
-      :eof ->
-        :none
     end
   end
 
@@ -167,36 +197,5 @@ defmodule SSTable do
         _ -> {:cont, next_offset}
       end
     end)
-  end
-
-  defp write_sstable_and_index(pairs, device, acc \\ {0, [], nil})
-
-  import SSTable.Write
-
-  @index_chunk_size SSTable.Settings.index_chunk_size()
-  defp write_sstable_and_index([{key, value} | rest], device, {byte_pos, idx, last_byte_pos}) do
-    segment_size = write_kv(key, value, device)
-
-    should_write_sparse_index_entry =
-      case last_byte_pos do
-        nil -> true
-        lbp when lbp + @index_chunk_size < byte_pos -> true
-        _too_soon -> false
-      end
-
-    next_len = byte_pos + segment_size
-
-    next_acc =
-      if should_write_sparse_index_entry do
-        {next_len, [{key, byte_pos} | idx], byte_pos}
-      else
-        {next_len, idx, last_byte_pos}
-      end
-
-    write_sstable_and_index(rest, device, next_acc)
-  end
-
-  defp write_sstable_and_index([], _device, {_byte_pos, idx, _last_byte_pos}) do
-    idx
   end
 end
