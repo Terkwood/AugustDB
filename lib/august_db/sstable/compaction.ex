@@ -96,11 +96,8 @@ defmodule SSTable.Compaction do
               last_offset: nil
   end
 
-  defmodule ChunkedIndexAcc do
-    defstruct index: [],
-              current_gz_offset: 0,
-              last_gz_offset: nil,
-              current_chunk: <<>>
+  defmodule Chunk do
+    defstruct [:unzipped, :gz_offset]
   end
 
   @tombstone tombstone()
@@ -119,9 +116,37 @@ defmodule SSTable.Compaction do
             device
           end)
 
-        raise "todo accumulate gzip chunks"
+        many_kv_devices_chunks =
+          many_devices
+          |> Enum.map(&{&1, 0})
+          |> Enum.map(fn {device, chunk} ->
+            read_next_kv(device, %Chunk{unzipped: <<>>, gz_offset: 0})
+          end)
+          |> Enum.filter(fn maybe_eof ->
+            case maybe_eof do
+              :eof -> false
+              _ -> true
+            end
+          end)
 
-        raise "todo"
+        output_path = SSTable.new_filename()
+
+        {:ok, output_sst} = :file.open(output_path, [:raw, :append])
+
+        index =
+          compare_and_write_chunks(many_kv_devices_chunks, output_sst, %IndexAcc{}, %Chunk{
+            unzipped: <<>>,
+            gz_offset: 0
+          })
+
+        Enum.map(many_devices, &:file.close(&1))
+        :ok = :file.close(output_sst)
+
+        index_binary = :erlang.term_to_binary(index)
+        index_path = hd(String.split(output_path, ".sst")) <> ".idx"
+        File.write!(index_path, index_binary)
+
+        {output_path, index}
     end
   end
 
@@ -170,12 +195,40 @@ defmodule SSTable.Compaction do
     end
   end
 
+  import SSTable.Write
+  @index_chunk_size SSTable.Settings.index_chunk_size()
+  defp compare_and_write_chunks(
+         [],
+         _outfile,
+         %IndexAcc{index: index, last_offset: _, current_offset: _},
+         _output_chunk
+       ) do
+    index
+  end
+
+  defp compare_and_write_chunks(
+         many_kv_devices_chunks,
+         output_device,
+         %IndexAcc{
+           index: index,
+           current_offset: index_bytes,
+           last_offset: last_offset
+         },
+         %Chunk{unzipped: output_payload, gz_offset: output_gz_offset}
+       )
+       when is_list(many_kv_devices_chunks) do
+    {the_lowest_key, the_lowest_value} =
+      many_kv_devices_chunks
+      |> Enum.map(fn {kv, _d, _chunk} -> kv end)
+      |> Sort.lowest_most_recent()
+
+    raise "todo"
+  end
+
   defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do
     index
   end
 
-  import SSTable.Write
-  @index_chunk_size SSTable.Settings.index_chunk_size()
   defp compare_and_write(many_kv_devices_offsets, outfile, %IndexAcc{
          index: index,
          current_offset: index_bytes,
@@ -235,12 +288,10 @@ defmodule SSTable.Compaction do
     |> compare_and_write(outfile, next_acc)
   end
 
-  defmodule Chunk do
-    defstruct [:unzipped, :gz_offset]
-  end
-
   @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
   defp read_next_kv(device, %Chunk{unzipped: <<>>, gz_offset: gz_offset}) do
+    IO.puts("base case")
+
     case :file.pread(device, gz_offset, @gzip_length_bytes) do
       :eof ->
         :eof
