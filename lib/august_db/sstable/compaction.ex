@@ -96,6 +96,13 @@ defmodule SSTable.Compaction do
               last_offset: nil
   end
 
+  defmodule ChunkedIndexAcc do
+    defstruct index: [],
+              current_offset: 0,
+              last_offset: nil,
+              current_chunk: <<>>
+  end
+
   @tombstone tombstone()
   defp merge(paths) when is_list(paths) do
     case paths do
@@ -140,6 +147,24 @@ defmodule SSTable.Compaction do
 
         {output_path, index}
     end
+  end
+
+  defp compare_and_write_chunks([], _outfile, %ChunkedIndexAcc{
+         index: index,
+         last_compressed_offset: _,
+         current_compressed_offset: _,
+         current_chunk: _
+       }) do
+    index
+  end
+
+  defp compare_and_write_chunks(many_kv_devices_offsets, outfile, %ChunkedIndexAcc{
+         index: index,
+         current_compressed_offset: current_compressed_offset,
+         last_compressed_offset: last_compressed_offset,
+         current_chunk: current_chunk
+       }) do
+    raise "todo"
   end
 
   defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do
