@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.4.0](https://github.com/Terkwood/AugustDB/compare/v0.3.0...v0.4.0) (2021-08-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* compress SSTables (#81)
+
+### Features
+
+* compress SSTables ([#81](https://github.com/Terkwood/AugustDB/issues/81)) ([e0e8b55](https://github.com/Terkwood/AugustDB/commit/e0e8b551f36dc7cff9968770ecad3d2a3a014152))
+* create and verify checksums ([#79](https://github.com/Terkwood/AugustDB/issues/79)) ([a091db3](https://github.com/Terkwood/AugustDB/commit/a091db39e9f9644dad8d5092dedf624d2ef5b7c5))
+
 ## [0.3.0](https://github.com/Terkwood/AugustDB/compare/v0.2.0...v0.3.0) (2021-08-04)
 
 
