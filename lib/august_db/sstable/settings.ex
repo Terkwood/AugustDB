@@ -4,7 +4,15 @@ defmodule SSTable.Settings do
   end
 
   def kv_length_bytes do
-    8
+    key_length_bytes() + value_length_bytes()
+  end
+
+  def key_length_bytes do
+    4
+  end
+
+  def value_length_bytes do
+    4
   end
 
   @t 4_294_967_296 - 1

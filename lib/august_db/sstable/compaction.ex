@@ -125,28 +125,6 @@ defmodule SSTable.Compaction do
     end
   end
 
-  defmodule Chunk do
-    defstruct [:unzipped, :gz_offset, :gz_length]
-  end
-
-  @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
-  defp read_next_kv(device, %Chunk{unzipped: <<>>, gz_offset: gz_offset, gz_length: gz_length}) do
-    raise "read next payload and update gz_offset, gz_length"
-    :file.pread(device, offset, @gzip_length_bytes) do
-      :eof ->
-        :eof
-
-      {:ok, l} ->
-        <<gzip_len::@gzip_length_bytes*8>> = IO.iodata_to_binary(l)
-        IO.inspect(gzip_len)
-        raise "todo"
-
-
-  end
-
-  defp read_next_kv(device, %Chunk{unzipped: payload}) do
-  end
-
   defp merge(paths) when is_list(paths) do
     case paths do
       [] ->
@@ -191,37 +169,6 @@ defmodule SSTable.Compaction do
         {output_path, index}
     end
   end
-
-  # defp compare_and_write_chunks([], _outfile, %ChunkedIndexAcc{
-  #        index: index,
-  #        last_gz_offset: _,
-  #        current_gz_offset: _,
-  #        current_chunk: current_chunk
-  #      }) do
-  #   raise "DEAD END"
-  #   raise "DEAD END"
-  #   raise "DEAD END"
-  #   index
-  # end
-
-  # defp compare_and_write_chunks(many_kv_devices_offsets, outfile, %ChunkedIndexAcc{
-  #        index: index,
-  #        current_gz_offset: current_compressed_offset,
-  #        last_gz_offset: last_compressed_offset,
-  #        current_chunk: current_chunk
-  #      })
-  #      when is_list(many_kv_devices_offsets) do
-  #   raise "DEAD END"
-  #   raise "DEAD END"
-  #   raise "DEAD END"
-
-  #   {the_lowest_key, the_lowest_value} =
-  #     many_kv_devices_offsets
-  #     |> Enum.map(fn {kv, _d, _offset} -> kv end)
-  #     |> Sort.lowest_most_recent()
-
-  #   raise "todo"
-  # end
 
   defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do
     index
@@ -286,6 +233,55 @@ defmodule SSTable.Compaction do
       end
     end)
     |> compare_and_write(outfile, next_acc)
+  end
+
+  defmodule Chunk do
+    defstruct [:unzipped, :gz_offset]
+  end
+
+  @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
+  defp read_next_kv(device, %Chunk{unzipped: <<>>, gz_offset: gz_offset}) do
+    case :file.pread(device, gz_offset, @gzip_length_bytes) do
+      :eof ->
+        :eof
+
+      {:ok, l} ->
+        <<gzipped_chunk_size::@gzip_length_bytes*8>> = IO.iodata_to_binary(l)
+        IO.inspect(gzipped_chunk_size)
+
+        case :file.pread(device, gz_offset + @gzip_length_bytes, gzipped_chunk_size) do
+          :eof ->
+            :eof
+
+          {:ok, next_gz_chunk} ->
+            unzipped = :zlib.gunzip(IO.iodata_to_binary(next_gz_chunk))
+
+            read_next_kv(device, %Chunk{
+              unzipped: unzipped,
+              gz_offset: gz_offset + @gzip_length_bytes + gzipped_chunk_size
+            })
+        end
+    end
+  end
+
+  @key_length_bytes SSTable.Settings.key_length_bytes()
+  @value_length_bytes SSTable.Settings.value_length_bytes()
+  defp read_next_kv(device, %Chunk{
+         unzipped: payload,
+         gz_offset: gz_offset
+       }) do
+    <<key_len::@key_length_bytes*8, value_len::@value_length_bytes*8, etc1::binary>> = payload
+
+    <<key::binary-size(key_len), etc2::binary>> = etc1
+
+    case value_len do
+      @tombstone ->
+        {{key, :tombstone}, device, %Chunk{unzipped: etc2, gz_offset: gz_offset}}
+
+      vl ->
+        <<value::binary-size(vl), etc3::binary>> = etc2
+        {{key, value}, device, %Chunk{unzipped: etc3, gz_offset: gz_offset}}
+    end
   end
 
   defp read_one(device, offset) do
