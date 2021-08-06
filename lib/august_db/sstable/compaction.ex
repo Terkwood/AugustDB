@@ -220,10 +220,24 @@ defmodule SSTable.Compaction do
          [],
          _outfile,
          index,
-         _output_chunk,
+         %Chunk{unzipped: <<>>},
          _maybe_first_chunk_key
        ) do
     index
+  end
+
+  defp compare_and_write_chunks(
+         [],
+         output_device,
+         index,
+         %Chunk{unzipped: leftover, gz_offset: gz_offset},
+         first_chunk_key
+       )
+       when is_binary(first_chunk_key) do
+    gz_chunk = :zlib.gzip(leftover)
+    write_chunk(gz_chunk, output_device)
+
+    [{first_chunk_key, gz_offset} | index]
   end
 
   defp compare_and_write_chunks(
@@ -247,6 +261,7 @@ defmodule SSTable.Compaction do
       if byte_size(wip_output) > SSTable.Settings.unzipped_data_chunk() do
         gz_chunk = :zlib.gzip(wip_output)
         write_chunk(gz_chunk, output_device)
+        IO.puts("WRITE NOW")
         %Chunk{unzipped: <<>>, gz_offset: output_gz_offset + byte_size(gz_chunk)}
       else
         %Chunk{unzipped: wip_output, gz_offset: output_gz_offset}
