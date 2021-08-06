@@ -251,6 +251,18 @@ defmodule SSTable.Compaction do
       else
         %Chunk{unzipped: wip_output, gz_offset: output_gz_offset}
       end
+
+    next_round =
+      many_kv_devices_chunks
+      |> Enum.map(fn {kv, d, chunk} ->
+        case kv do
+          {k, _} when k == the_lowest_key ->
+            read_next_kv(d, chunk)
+
+          higher ->
+            {higher, d, chunk}
+        end
+      end)
   end
 
   defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do
