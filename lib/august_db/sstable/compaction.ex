@@ -144,6 +144,7 @@ defmodule SSTable.Compaction do
             nil
           )
 
+        IO.inspect(index)
         Enum.map(many_devices, &:file.close(&1))
         :ok = :file.close(output_sst)
 
@@ -178,7 +179,7 @@ defmodule SSTable.Compaction do
          %Chunk{unzipped: <<>>},
          _maybe_first_chunk_key
        ) do
-    index
+    Enum.reverse(index)
   end
 
   defp compare_and_write_chunks(
@@ -186,13 +187,13 @@ defmodule SSTable.Compaction do
          output_device,
          index,
          %Chunk{unzipped: leftover, gz_offset: gz_offset},
-         first_chunk_key
+         chunk_key
        )
-       when is_binary(first_chunk_key) do
+       when is_binary(chunk_key) do
     gz_chunk = :zlib.gzip(leftover)
     write_chunk(gz_chunk, output_device)
 
-    [{first_chunk_key, gz_offset} | index]
+    Enum.reverse([{chunk_key, gz_offset} | index])
   end
 
   defp compare_and_write_chunks(
