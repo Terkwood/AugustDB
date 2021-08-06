@@ -56,14 +56,14 @@ A Sorted String Table contains zero or more _gzipped key/value chunks_.
 
 ### GZipped key/value chunks
 
-A _sized gzip chunk_ follows this binary specification:
+A _gzip key/value chunk_ follows this binary specification:
 
 1. First four bytes: length of the gzipped chunk
-2. <variable length bytes>: gzipped chunk of key/value pairs, with tombstones.
+2. Variable length: gzipped chunk of key/value pairs, with tombstones.
 
 ### Unzipped key/value chunks
 
-Each unzipped chunk contains zero or more key/value records.
+Once unzipped, each key/value chunk contains zero or more key/value records.
 Each record describes its own length. Some keys may point to
 tombstones.
 
