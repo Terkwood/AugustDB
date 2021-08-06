@@ -198,35 +198,4 @@ defmodule SSTable do
       end
     end)
   end
-
-  # defp write_sstable_and_index(pairs, device, acc \\ {0, [], nil})
-
-  # import SSTable.Write
-
-  # @index_chunk_size SSTable.Settings.index_chunk_size()
-  # defp write_sstable_and_index([{key, value} | rest], device, {byte_pos, idx, last_byte_pos}) do
-  #   segment_size = write_kv(key, value, device)
-
-  #   should_write_sparse_index_entry =
-  #     case last_byte_pos do
-  #       nil -> true
-  #       lbp when lbp + @index_chunk_size < byte_pos -> true
-  #       _too_soon -> false
-  #     end
-
-  #   next_len = byte_pos + segment_size
-
-  #   next_acc =
-  #     if should_write_sparse_index_entry do
-  #       {next_len, [{key, byte_pos} | idx], byte_pos}
-  #     else
-  #       {next_len, idx, last_byte_pos}
-  #     end
-
-  #   write_sstable_and_index(rest, device, next_acc)
-  # end
-
-  # defp write_sstable_and_index([], _device, {_byte_pos, idx, _last_byte_pos}) do
-  #   idx
-  # end
 end
