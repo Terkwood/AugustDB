@@ -115,14 +115,36 @@ defmodule SSTable.Compaction do
       many_paths ->
         many_devices =
           Enum.map(many_paths, fn p ->
-            {:ok, f} = :file.open(p, [:read, :raw])
-            f
+            {:ok, device} = :file.open(p, [:read, :raw])
+            device
           end)
 
         raise "todo accumulate gzip chunks"
 
         raise "todo"
     end
+  end
+
+  defmodule Chunk do
+    defstruct [:unzipped, :gz_offset, :gz_length]
+  end
+
+  @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
+  defp read_next_kv(device, %Chunk{unzipped: <<>>, gz_offset: gz_offset, gz_length: gz_length}) do
+    raise "read next payload and update gz_offset, gz_length"
+    :file.pread(device, offset, @gzip_length_bytes) do
+      :eof ->
+        :eof
+
+      {:ok, l} ->
+        <<gzip_len::@gzip_length_bytes*8>> = IO.iodata_to_binary(l)
+        IO.inspect(gzip_len)
+        raise "todo"
+
+
+  end
+
+  defp read_next_kv(device, %Chunk{unzipped: payload}) do
   end
 
   defp merge(paths) when is_list(paths) do
