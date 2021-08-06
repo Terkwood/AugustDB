@@ -6,10 +6,40 @@ defmodule SSTable.Compaction do
   """
 
   @doc """
-  Run compaction on all SSTables, generating a Sorted String Table file
+  Run compaction on all SSTables, generating a _gzipped_ Sorted String Table file
   (.sst) and an erlang binary representation of its index (key to byte
   offset) as a `.idx` file.  The index is sparse, having only one entry
   per `SSTable.Settings.index_chunk_size` bytes.
+
+  # Specification of Sorted String Table files
+
+  A Sorted String Table contains zero or more _gzipped key/value chunks_.
+
+  ## GZipped key/value chunks
+
+  A _sized gzip chunk_ follows this binary specification:
+
+  1. First four bytes: length of the gzipped chunk
+  2. <variable length bytes>: gzipped chunk of key/value pairs, with tombstones.
+
+  ## Unzipped key/value chunks
+
+  Each unzipped chunk contains zero or more key/value records.
+  Each record describes its own length.  Some keys may point to
+  tombstones.
+
+  ### Value records
+
+  1. Length of key in bytes
+  2. Length of value in bytes
+  3. Raw key, not escaped
+  4. Raw value, not escaped
+
+  ### Tombstone records
+
+  1. Length of key in bytes
+  2. `2^32 - 1` to indicate tombstone
+  3. Raw key, not escaped
   """
   def run do
     old_sst_paths = Enum.sort(Path.wildcard("*.sst"))
