@@ -215,8 +215,8 @@ defmodule SSTable.Compaction do
     next_chunk =
       if byte_size(wip_output) > SSTable.Settings.unzipped_data_chunk() do
         gz_chunk = :zlib.gzip(wip_output)
-        write_chunk(gz_chunk, output_device)
-        %Chunk{unzipped: <<>>, gz_offset: output_gz_offset + byte_size(gz_chunk)}
+        written_size = write_chunk(gz_chunk, output_device)
+        %Chunk{unzipped: <<>>, gz_offset: output_gz_offset + written_size}
       else
         %Chunk{unzipped: wip_output, gz_offset: output_gz_offset}
       end
