@@ -260,6 +260,13 @@ defmodule SSTable.Compaction do
         index
       end
 
+    next_chunk_key =
+      if should_write_sparse_index_entry do
+        nil
+      else
+        first_chunk_key
+      end
+
     next_round
     |> Enum.filter(fn tuple_or_eof ->
       case tuple_or_eof do
@@ -267,7 +274,7 @@ defmodule SSTable.Compaction do
         _ -> true
       end
     end)
-    |> compare_and_write_chunks(output_device, next_index, next_output_chunk, first_chunk_key)
+    |> compare_and_write_chunks(output_device, next_index, next_output_chunk, next_chunk_key)
   end
 
   @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
