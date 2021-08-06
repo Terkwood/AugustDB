@@ -212,8 +212,10 @@ defmodule SSTable.Compaction do
 
     wip_output = output_payload <> kv_bin
 
+    should_write_chunk = byte_size(wip_output) > SSTable.Settings.unzipped_data_chunk()
+
     next_chunk =
-      if byte_size(wip_output) > SSTable.Settings.unzipped_data_chunk() do
+      if should_write_chunk do
         gz_chunk = :zlib.gzip(wip_output)
         written_size = write_chunk(gz_chunk, output_device)
         %Chunk{unzipped: <<>>, gz_offset: output_gz_offset + written_size}
@@ -307,6 +309,7 @@ defmodule SSTable.Compaction do
 
       vl ->
         <<value::binary-size(vl), etc3::binary>> = etc2
+        IO.puts("- #{key} #{String.slice(value, 0, 10)}")
         {{key, value}, device, %Chunk{unzipped: etc3, gz_offset: gz_offset}}
     end
   end
