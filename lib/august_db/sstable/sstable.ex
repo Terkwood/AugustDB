@@ -93,7 +93,6 @@ defmodule SSTable do
     kvs = Enum.filter(maybe_kvs, &(&1 != nil))
 
     {payload, sparse_index} = SSTable.Zip.zip(kvs)
-    IO.inspect(sparse_index)
 
     time = :erlang.system_time()
     sst_path = new_filename(time)
