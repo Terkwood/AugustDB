@@ -98,12 +98,33 @@ defmodule SSTable.Compaction do
 
   defmodule ChunkedIndexAcc do
     defstruct index: [],
-              current_offset: 0,
-              last_offset: nil,
+              current_gz_offset: 0,
+              last_gz_offset: nil,
               current_chunk: <<>>
   end
 
   @tombstone tombstone()
+  defp merge_gz_chunks(paths) when is_list(paths) do
+    case paths do
+      [] ->
+        :noop
+
+      [_one] ->
+        :noop
+
+      many_paths ->
+        many_devices =
+          Enum.map(many_paths, fn p ->
+            {:ok, f} = :file.open(p, [:read, :raw])
+            f
+          end)
+
+        raise "todo accumulate gzip chunks"
+
+        raise "todo"
+    end
+  end
+
   defp merge(paths) when is_list(paths) do
     case paths do
       [] ->
@@ -149,23 +170,36 @@ defmodule SSTable.Compaction do
     end
   end
 
-  defp compare_and_write_chunks([], _outfile, %ChunkedIndexAcc{
-         index: index,
-         last_compressed_offset: _,
-         current_compressed_offset: _,
-         current_chunk: _
-       }) do
-    index
-  end
+  # defp compare_and_write_chunks([], _outfile, %ChunkedIndexAcc{
+  #        index: index,
+  #        last_gz_offset: _,
+  #        current_gz_offset: _,
+  #        current_chunk: current_chunk
+  #      }) do
+  #   raise "DEAD END"
+  #   raise "DEAD END"
+  #   raise "DEAD END"
+  #   index
+  # end
 
-  defp compare_and_write_chunks(many_kv_devices_offsets, outfile, %ChunkedIndexAcc{
-         index: index,
-         current_compressed_offset: current_compressed_offset,
-         last_compressed_offset: last_compressed_offset,
-         current_chunk: current_chunk
-       }) do
-    raise "todo"
-  end
+  # defp compare_and_write_chunks(many_kv_devices_offsets, outfile, %ChunkedIndexAcc{
+  #        index: index,
+  #        current_gz_offset: current_compressed_offset,
+  #        last_gz_offset: last_compressed_offset,
+  #        current_chunk: current_chunk
+  #      })
+  #      when is_list(many_kv_devices_offsets) do
+  #   raise "DEAD END"
+  #   raise "DEAD END"
+  #   raise "DEAD END"
+
+  #   {the_lowest_key, the_lowest_value} =
+  #     many_kv_devices_offsets
+  #     |> Enum.map(fn {kv, _d, _offset} -> kv end)
+  #     |> Sort.lowest_most_recent()
+
+  #   raise "todo"
+  # end
 
   defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do
     index
