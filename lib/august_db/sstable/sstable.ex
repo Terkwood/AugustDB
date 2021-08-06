@@ -6,29 +6,29 @@ defmodule SSTable do
 
   ## GZipped key/value chunks
 
-  A _sized gzip chunk_ follows this binary specification:
+  A _gzip key/value chunk_ follows this binary specification:
 
-  1. First four bytes: length of the gzipped chunk
-  2. <variable length bytes>: gzipped chunk of key/value pairs, with tombstones.
+  1. Four bytes: length of the gzipped chunk
+  2. Variable length: gzipped chunk of key/value pairs, with tombstones.
 
   ## Unzipped key/value chunks
 
-  Each unzipped chunk contains zero or more key/value records.
-  Each record describes its own length.  Some keys may point to
+  Once unzipped, each key/value chunk contains zero or more key/value records.
+  Each record describes its own length. Some keys may point to
   tombstones.
 
   ### Value records
 
-  1. Length of key in bytes
-  2. Length of value in bytes
-  3. Raw key, not escaped
-  4. Raw value, not escaped
+  1. Four bytes: Length of key
+  2. Four bytes: Length of value
+  3. Variable length: Raw key, not escaped
+  4. Variable length: Raw value, not escaped
 
   ### Tombstone records
 
-  1. Length of key in bytes
-  2. `2^32 - 1` to indicate tombstone
-  3. Raw key, not escaped
+  1. Four bytes: Length of key in bytes
+  2. Four bytes: `2^32 - 1` to indicate tombstone
+  3. Variable length: Raw key, not escaped
   """
   import SSTable.Settings
 
