@@ -214,7 +214,7 @@ defmodule SSTable.Compaction do
 
     should_write_chunk = byte_size(wip_output) > SSTable.Settings.unzipped_data_chunk()
 
-    next_chunk =
+    next_output_chunk =
       if should_write_chunk do
         gz_chunk = :zlib.gzip(wip_output)
         written_size = write_chunk(gz_chunk, output_device)
@@ -236,7 +236,7 @@ defmodule SSTable.Compaction do
       end)
 
     should_write_sparse_index_entry =
-      case next_chunk.unzipped do
+      case next_output_chunk.unzipped do
         <<>> -> true
         _too_soon -> false
       end
@@ -266,7 +266,7 @@ defmodule SSTable.Compaction do
         _ -> true
       end
     end)
-    |> compare_and_write_chunks(output_device, next_index, next_chunk, first_chunk_key)
+    |> compare_and_write_chunks(output_device, next_index, next_output_chunk, first_chunk_key)
   end
 
   @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
