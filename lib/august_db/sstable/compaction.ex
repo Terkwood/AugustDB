@@ -269,15 +269,12 @@ defmodule SSTable.Compaction do
 
   @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
   defp read_next_kv(device, %Chunk{unzipped: <<>>, gz_offset: gz_offset}) do
-    IO.puts("base case")
-
     case :file.pread(device, gz_offset, @gzip_length_bytes) do
       :eof ->
         :eof
 
       {:ok, l} ->
         <<gzipped_chunk_size::@gzip_length_bytes*8>> = IO.iodata_to_binary(l)
-        IO.inspect(gzipped_chunk_size)
 
         case :file.pread(device, gz_offset + @gzip_length_bytes, gzipped_chunk_size) do
           :eof ->
@@ -300,7 +297,6 @@ defmodule SSTable.Compaction do
          unzipped: payload,
          gz_offset: gz_offset
        }) do
-    IO.puts("we have payload bytes 🎣")
     <<key_len::@key_length_bytes*8, value_len::@value_length_bytes*8, etc1::binary>> = payload
 
     <<key::binary-size(key_len), etc2::binary>> = etc1
