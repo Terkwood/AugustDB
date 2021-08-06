@@ -46,7 +46,7 @@ defmodule SSTable.Zip do
                  gzip_chunk = :zlib.gzip(current_chunk <> kv_bin)
                  chunk_size = <<byte_size(gzip_chunk)::32>>
 
-                 IO.inspect(%ChunkAccum{
+                 %ChunkAccum{
                    payload: payload <> chunk_size <> gzip_chunk,
                    current_chunk: <<>>,
                    index: [{next_chunk_key, next_chunk_offset} | index],
@@ -54,7 +54,7 @@ defmodule SSTable.Zip do
                    chunk_offset: nil,
                    current_offset:
                      current_offset + SSTable.Settings.gzip_length_bytes() + byte_size(gzip_chunk)
-                 })
+                 }
                else
                  %ChunkAccum{
                    payload: payload,
