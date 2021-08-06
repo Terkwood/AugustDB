@@ -29,4 +29,8 @@ defmodule SSTable.Settings do
   def index_chunk_size do
     @index_chunk_size
   end
+
+  def unzipped_data_chunk do
+    SSTable.Settings.index_chunk_size() * 2
+  end
 end

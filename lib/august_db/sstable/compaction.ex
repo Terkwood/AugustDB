@@ -222,7 +222,20 @@ defmodule SSTable.Compaction do
       |> Enum.map(fn {kv, _d, _chunk} -> kv end)
       |> Sort.lowest_most_recent()
 
-    raise "todo"
+    kv_bin = SSTable.KV.to_binary(the_lowest_key, the_lowest_value)
+    segment_size = byte_size(kv_bin)
+
+    wip_output = output_payload <> kv_bin
+
+    chunk_size = byte_size(wip_output)
+
+    next_chunk =
+      if byte_size(wip_output) > SSTable.Settings.unzipped_data_chunk() do
+        raise "todo write it, and don't forget the chunk length header"
+        %Chunk{unzipped: <<>>, gz_offset: output_gz_offset + chunk_size}
+      else
+        %Chunk{unzipped: wip_output, gz_offset: output_gz_offset}
+      end
   end
 
   defp compare_and_write([], _outfile, %IndexAcc{index: index, last_offset: _, current_offset: _}) do

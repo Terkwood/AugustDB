@@ -19,7 +19,7 @@ defmodule SSTable.Zip do
   end
 
   # wild guess at how much uncompressed data we should read in before gzipping
-  @uncompressed_data_chunk SSTable.Settings.index_chunk_size() * 2
+  @uncompressed_data_chunk SSTable.Settings.unzipped_data_chunk()
   def zip(kvs) do
     case kvs
          |> Enum.reduce(ChunkAccum.empty(), fn {key, value},
