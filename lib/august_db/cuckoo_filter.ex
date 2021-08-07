@@ -27,6 +27,10 @@ defmodule CuckooFilter do
     GenServer.start_link(__MODULE__, %{}, name: CuckooFilterAgent)
   end
 
+  def init(state) do
+    {:ok, state}
+  end
+
   def write(sst_path, filter) do
     Agent.update(__MODULE__, &Map.put(&1, sst_path, filter))
   end
@@ -36,7 +40,7 @@ defmodule CuckooFilter do
   end
 
   def initialize(sst_path, memtable_keys) do
-    filter = :cuckoo_filter.new(length(memtable_keys))
+    filter = :cuckoo_filter.new(max(length(memtable_keys), 1))
 
     for key <- memtable_keys do
       :cuckoo_filter.add(filter, key)
