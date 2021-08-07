@@ -1,7 +1,7 @@
 NimbleCSV.define(CommitLogParser, separator: TSV.col_separator(), escape: "\"")
 
 defmodule CommitLog do
-  @tsv_header_string "k\tv\tt\n"
+  @tsv_header_string "key\tvalue\ttime\tcrc32\n"
   @tombstone_string Tombstone.string()
   @log_file "commit.log"
 
@@ -10,11 +10,18 @@ defmodule CommitLog do
   end
 
   def append(key, value) do
+    <<crc32::32>> = Checksum.create(key <> value)
+
     File.write!(
       @log_file,
       key <>
         TSV.col_separator() <>
-        value <> TSV.col_separator() <> "#{:erlang.monotonic_time()}" <> TSV.row_separator(),
+        value <>
+        TSV.col_separator() <>
+        "#{:erlang.monotonic_time()}" <>
+        TSV.col_separator() <>
+        Integer.to_string(crc32, 16) <>
+        TSV.row_separator(),
       [:append]
     )
   end
@@ -31,9 +38,14 @@ defmodule CommitLog do
     |> CommitLogParser.parse_stream()
     |> Stream.map(fn stuff ->
       case stuff do
-        [k, v, _] when v == @tombstone_string -> Memtable.delete(k)
-        [k, v, _] -> Memtable.update(k, v)
-        unknown -> IO.puts(:stderr, "CommitLogParser cannot interpret #{unknown}: discarding")
+        [k, v, _, _crc32] when v == @tombstone_string ->
+          Memtable.delete(k)
+
+        [k, v, _, _crc32] ->
+          Memtable.update(k, v)
+
+        unknown ->
+          IO.puts(:stderr, "CommitLogParser cannot interpret #{unknown}: discarding")
       end
     end)
     |> Stream.run()
