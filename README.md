@@ -82,7 +82,7 @@ tombstones.
 
 ### Example in hex
 
-One can image a simple, uncompressed binary representation of keys to values:
+One can imagine a simple, uncompressed binary representation of keys to values:
 
 - hey: now
 - no: yes
