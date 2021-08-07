@@ -45,13 +45,22 @@ defmodule SSTable do
 
   ## Examples
 
-  Basic query
+  ### As used during a normal run
+
+  Pass a MapSet of paths to exclude from
+  the tables queried.
 
   ```elixir
-  SSTable.query_all("a")
+  SSTable.query("a", CuckooFilter.eliminate("a"))
   ```
 
-  Combined with Memtable
+  ### Basic query
+
+  ```elixir
+  SSTable.query("a")
+  ```
+
+  ### Combined with Memtable
 
   ```elixir
   Memtable.update("bar","BAZ"); Memtable.delete("foo"); Memtable.flush()
@@ -116,13 +125,10 @@ defmodule SSTable do
   end
 
   defp query_all(_key, []) do
-    IO.puts("🖔")
     :none
   end
 
   defp query_all(key, [sst_file | rest]) do
-    IO.puts("🔎")
-
     case query_file(key, sst_file) do
       :none -> query_all(key, rest)
       :tombstone -> :tombstone
