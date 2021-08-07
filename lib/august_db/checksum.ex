@@ -3,8 +3,8 @@ defmodule Checksum do
     <<:erlang.crc32(uncompressed_payload)::32>>
   end
 
-  def verify(uncompressed_payload, crc32_checksum) do
-    case create(uncompressed_payload) == crc32_checksum do
+  def verify(uncompressed_payload, crc32_checksum) when is_integer(crc32_checksum) do
+    case create(uncompressed_payload) == <<crc32_checksum::32>> do
       true -> :ok
       false -> :fail
     end
