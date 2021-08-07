@@ -64,7 +64,7 @@ defmodule SSTable do
   :none
   ```
   """
-  def query(key, exclude_paths \\ []) do
+  def query(key, exclude_paths \\ MapSet.new()) do
     sst_files =
       Path.wildcard("*.sst")
       |> Enum.sort()
@@ -116,10 +116,13 @@ defmodule SSTable do
   end
 
   defp query_all(_key, []) do
+    IO.puts("🖔")
     :none
   end
 
   defp query_all(key, [sst_file | rest]) do
+    IO.puts("🔎")
+
     case query_file(key, sst_file) do
       :none -> query_all(key, rest)
       :tombstone -> :tombstone

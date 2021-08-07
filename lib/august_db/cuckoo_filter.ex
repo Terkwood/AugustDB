@@ -28,7 +28,6 @@ defmodule CuckooFilter do
   end
 
   def remember(sst_path, memtable_keys) do
-    IO.inspect(memtable_keys)
     filter = :cuckoo_filter.new(max(length(memtable_keys), 1))
 
     for key <- memtable_keys do
@@ -43,12 +42,14 @@ defmodule CuckooFilter do
   not exist.
   """
   def eliminate(key) do
-    MapSet.new(
-      Agent.get(__MODULE__, fn map ->
-        for {sst_path, filter} <- map, !:cuckoo_filter.contains(filter, key) do
-          sst_path
-        end
-      end)
+    IO.inspect(
+      MapSet.new(
+        Agent.get(__MODULE__, fn map ->
+          for {sst_path, filter} <- map, !:cuckoo_filter.contains(filter, key) do
+            sst_path
+          end
+        end)
+      )
     )
   end
 
