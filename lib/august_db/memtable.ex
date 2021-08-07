@@ -76,7 +76,7 @@ defmodule Memtable do
     SSTable.Index.remember(flushed_sst_path, sparse_index)
 
     # Create a cuckoo filter in memory for this table
-    CuckooFilter.initialize(flushed_sst_path, keys_without_tombstones(flushing))
+    CuckooFilter.initialize(flushed_sst_path, :gb_trees.keys(flushing))
 
     # Finished.  Clear the flushing table state.
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
@@ -101,11 +101,5 @@ defmodule Memtable do
         flushing: :gb_trees.empty()
       }
     end)
-  end
-
-  defp keys_without_tombstones(tree) do
-    for {key, value} when value != :tombstone <- :gb_trees.keys(tree) do
-      key
-    end
   end
 end
