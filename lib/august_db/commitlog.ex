@@ -38,10 +38,22 @@ defmodule CommitLog do
     |> CommitLogParser.parse_stream()
     |> Stream.map(fn stuff ->
       case stuff do
-        [k, v, _, _crc32] when v == @tombstone_string ->
-          Memtable.delete(k)
+        [k, v, _, crc32_string] when v == @tombstone_string ->
+          {crc32, _} = Integer.parse(crc32_string, 16)
 
-        [k, v, _, _crc32] ->
+          case Checksum.verify(k <> v, crc32) do
+            :ok -> Memtable.delete(k)
+            :fail -> IO.puts("CommitLog failed to verify checksum for #{k}: discarding")
+          end
+
+        [k, v, _, crc32_string] ->
+          {crc32, _} = Integer.parse(crc32_string, 16)
+
+          case Checksum.verify(k <> v, crc32) do
+            :ok -> Memtable.delete(k)
+            :fail -> IO.puts("CommitLog failed to verify checksum for #{k}: discarding")
+          end
+
           Memtable.update(k, v)
 
         unknown ->
