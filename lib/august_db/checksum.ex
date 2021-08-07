@@ -3,6 +3,13 @@ defmodule Checksum do
     <<:erlang.crc32(uncompressed_payload)::32>>
   end
 
+  def verify(uncompressed_payload, crc32_checksum) do
+    case create(uncompressed_payload) == crc32_checksum do
+      true -> :ok
+      false -> :fail
+    end
+  end
+
   @doc """
   Verifies a gzip checksum, per the
   [gzip file format](https://en.wikipedia.org/wiki/Gzip#File_format):
@@ -10,7 +17,7 @@ defmodule Checksum do
   > an 8-byte footer, containing a CRC-32 checksum and the
   > length of the original uncompressed data, modulo 2^32
   """
-  def verify(compressed_payload, crc32_checksum) do
+  def verify_gzip(compressed_payload, crc32_checksum) do
     pl = :binary.bin_to_list(compressed_payload)
 
     # not sure why we had to reverse this... but it works?!
