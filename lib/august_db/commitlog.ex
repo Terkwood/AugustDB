@@ -29,11 +29,11 @@ defmodule CommitLog do
 
     Stream.concat(hdr, log)
     |> CommitLogParser.parse_stream()
-    |> Stream.map(fn [k, v, _] ->
-      if v == @tombstone_string do
-        Memtable.delete(k)
-      else
-        Memtable.update(k, v)
+    |> Stream.map(fn stuff ->
+      case stuff do
+        [k, v, _] when v == @tombstone_string -> Memtable.delete(k)
+        [k, v, _] -> Memtable.update(k, v)
+        dunno -> IO.puts(:stderr, "CommitLogParser cannot interpret #{dunno}")
       end
     end)
     |> Stream.run()
