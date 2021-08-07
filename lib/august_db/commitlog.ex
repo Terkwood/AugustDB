@@ -33,7 +33,7 @@ defmodule CommitLog do
       case stuff do
         [k, v, _] when v == @tombstone_string -> Memtable.delete(k)
         [k, v, _] -> Memtable.update(k, v)
-        dunno -> IO.puts(:stderr, "CommitLogParser cannot interpret #{dunno}")
+        unknown -> IO.puts(:stderr, "CommitLogParser cannot interpret #{unknown}: discarding")
       end
     end)
     |> Stream.run()
