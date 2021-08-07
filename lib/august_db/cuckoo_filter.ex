@@ -27,10 +27,6 @@ defmodule CuckooFilter do
     Agent.start_link(fn -> initial_value end, name: __MODULE__)
   end
 
-  def write(sst_path, filter) do
-    Agent.update(__MODULE__, &Map.put(&1, sst_path, filter))
-  end
-
   def delete(sst_path) do
     Agent.update(__MODULE__, &Map.drop(&1, [sst_path]))
   end
@@ -42,6 +38,6 @@ defmodule CuckooFilter do
       :cuckoo_filter.add(filter, key)
     end
 
-    write(sst_path, filter)
+    Agent.update(__MODULE__, &Map.put(&1, sst_path, filter))
   end
 end
