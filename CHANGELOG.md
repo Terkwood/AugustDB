@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.1](https://github.com/Terkwood/AugustDB/compare/v0.4.0...v0.4.1) (2021-08-07)
+
+
+### Features
+
+* write and verify checksum in commit.log ([#87](https://github.com/Terkwood/AugustDB/issues/87)) ([bc0d7e3](https://github.com/Terkwood/AugustDB/commit/bc0d7e351bf20d2928aa2b8af987a2ef638826ea))
+
+
+### Bug Fixes
+
+* discard malformed entries in commit.log ([#86](https://github.com/Terkwood/AugustDB/issues/86)) ([f95e790](https://github.com/Terkwood/AugustDB/commit/f95e790c577a54a6f9ae3e9e269463da50334e6c))
+
 ## [0.4.0](https://github.com/Terkwood/AugustDB/compare/v0.3.0...v0.4.0) (2021-08-06)
 
 
