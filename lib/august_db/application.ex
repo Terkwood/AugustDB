@@ -14,7 +14,7 @@ defmodule AugustDb.Application do
       # Start the SSTable Index agent
       {SSTable.Index, %{}},
       # Start the Cuckoo Filter agent
-      CuckooFilter,
+      {CuckooFilter, %{}},
       # Make sure commit log exists, old entries are written into SSTable, etc.
       {Task, fn -> Startup.init() end},
       # Start periodic SSTable compaction

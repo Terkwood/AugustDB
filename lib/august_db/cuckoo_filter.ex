@@ -23,12 +23,8 @@ defmodule CuckooFilter do
   - Client API to be called from Memtable.flush() and Compaction.run()
   """
 
-  def start_link(_) do
-    GenServer.start_link(__MODULE__, %{}, name: CuckooFilterAgent)
-  end
-
-  def init(state) do
-    {:ok, state}
+  def start_link(initial_value) do
+    Agent.start_link(fn -> initial_value end, name: __MODULE__)
   end
 
   def write(sst_path, filter) do
