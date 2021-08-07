@@ -3,17 +3,27 @@ defmodule ChecksumTest do
   import Checksum
 
   test "create checksum" do
-    cs = create("foo bar baz qux")
-    assert cs == <<216, 38, 20, 177>>
+    chk = create("foo bar baz qux")
+    assert chk == <<216, 38, 20, 177>>
   end
 
-  test "verify checksum positive" do
-    cs = create("foo bar baz qux")
-    assert verify(:zlib.gzip("foo bar baz qux"), cs) == :ok
+  test "verify plain k/v pair positive" do
+    <<chk::32>> = create("some_key" <> "some_value")
+    assert verify("some_key" <> "some_value", chk) == :ok
+  end
+
+  test "verify plain k/v pair negative" do
+    <<chk::32>> = create("some_key" <> "some_value")
+    assert verify("some_key" <> "some_valu", chk) == :fail
+  end
+
+  test "verify gzip checksum positive" do
+    chk = create("foo bar baz qux")
+    assert verify_gzip(:zlib.gzip("foo bar baz qux"), chk) == :ok
   end
 
   test "verify checksum negative" do
     bad_idea = <<214, 38, 21, 176>>
-    assert verify(:zlib.gzip("foo bar baz qux"), bad_idea) == :fail
+    assert verify_gzip(:zlib.gzip("foo bar baz qux"), bad_idea) == :fail
   end
 end
