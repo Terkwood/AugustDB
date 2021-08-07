@@ -31,6 +31,7 @@ defmodule SSTable.Compaction do
 
         # Update the cuckoo filter for this table
         CuckooFilter.remember(sst_filename, all_keys_out)
+        CuckooFilter.forget(old_sst_paths)
 
         sst_filename
     end

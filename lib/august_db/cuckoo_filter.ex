@@ -27,10 +27,6 @@ defmodule CuckooFilter do
     Agent.start_link(fn -> initial_value end, name: __MODULE__)
   end
 
-  def delete(sst_path) do
-    Agent.update(__MODULE__, &Map.drop(&1, [sst_path]))
-  end
-
   def remember(sst_path, memtable_keys) do
     filter = :cuckoo_filter.new(max(length(memtable_keys), 1))
 
@@ -39,5 +35,21 @@ defmodule CuckooFilter do
     end
 
     Agent.update(__MODULE__, &Map.put(&1, sst_path, filter))
+  end
+
+  @doc """
+  Return those SST paths where we can be sure that the key does
+  not exist in the table.
+  """
+  def eliminate(key) do
+    Agent.get(__MODULE__, fn map ->
+      for {sst_path, filter} <- map, !:cuckoo_filter.contains(filter, key) do
+        sst_path
+      end
+    end)
+  end
+
+  def forget(old_sst_paths) do
+    Agent.update(__MODULE__, &Map.drop(&1, old_sst_paths))
   end
 end
