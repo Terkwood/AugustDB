@@ -4,10 +4,17 @@ defmodule ChecksumTest do
 
   test "create checksum" do
     chk = create("foo bar baz qux")
-    assert cs == <<216, 38, 20, 177>>
+    assert chk == <<216, 38, 20, 177>>
   end
 
   test "verify plain k/v pair positive" do
+    chk = create("some_key" <> "some_value")
+    assert verify("some_key" <> "some_value", chk) == :ok
+  end
+
+  test "verify plain k/v pair negative" do
+    chk = create("some_key" <> "some_value")
+    assert verify("some_key" <> "some_valu", chk) == :fail
   end
 
   test "verify gzip checksum positive" do
