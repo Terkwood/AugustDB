@@ -8,12 +8,12 @@ defmodule ChecksumTest do
   end
 
   test "verify plain k/v pair positive" do
-    chk = create("some_key" <> "some_value")
+    <<chk::32>> = create("some_key" <> "some_value")
     assert verify("some_key" <> "some_value", chk) == :ok
   end
 
   test "verify plain k/v pair negative" do
-    chk = create("some_key" <> "some_value")
+    <<chk::32>> = create("some_key" <> "some_value")
     assert verify("some_key" <> "some_valu", chk) == :fail
   end
 
