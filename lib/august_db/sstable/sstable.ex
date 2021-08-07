@@ -45,27 +45,41 @@ defmodule SSTable do
 
   ## Examples
 
-  Basic query
+  ### As used during a normal run
+
+  Pass a MapSet of paths to exclude from
+  the tables queried.
 
   ```elixir
-  SSTable.query_all("a")
+  SSTable.query("a", CuckooFilter.eliminate("a"))
   ```
 
-  Combined with Memtable
+  ### Basic query
+
+  ```elixir
+  SSTable.query("a")
+  ```
+
+  ### Combined with Memtable
 
   ```elixir
   Memtable.update("bar","BAZ"); Memtable.delete("foo"); Memtable.flush()
   :ok
-  SSTable.query_all("bar")
+  SSTable.query("bar")
   "BAZ"
-  SSTable.query_all("foo")
+  SSTable.query("foo")
   :tombstone
-  SSTable.query_all("a")
+  SSTable.query("a")
   :none
   ```
   """
-  def query_all(key) do
-    sst_files = Path.wildcard("*.sst") |> Enum.sort() |> Enum.reverse()
+  def query(key, exclude_paths \\ MapSet.new()) do
+    sst_files =
+      Path.wildcard("*.sst")
+      |> Enum.sort()
+      |> Enum.reverse()
+      |> Enum.filter(&(!MapSet.member?(exclude_paths, &1)))
+
     query_all(key, sst_files)
   end
 
@@ -115,7 +129,7 @@ defmodule SSTable do
   end
 
   defp query_all(key, [sst_file | rest]) do
-    case query(key, sst_file) do
+    case query_file(key, sst_file) do
       :none -> query_all(key, rest)
       :tombstone -> :tombstone
       value -> value
@@ -124,7 +138,7 @@ defmodule SSTable do
 
   @tombstone tombstone()
   @gzip_length_bytes SSTable.Settings.gzip_length_bytes()
-  defp query(key, sst_filename) when is_binary(sst_filename) do
+  defp query_file(key, sst_filename) when is_binary(sst_filename) do
     index = SSTable.Index.fetch(sst_filename)
 
     nearest_offset =

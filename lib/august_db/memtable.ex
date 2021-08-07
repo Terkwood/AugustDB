@@ -71,9 +71,12 @@ defmodule Memtable do
     CommitLog.new()
 
     # Write the current memtable to disk in a binary format
-    {flushed_sst, sparse_index} = SSTable.dump(flushing)
+    {flushed_sst_path, sparse_index} = SSTable.dump(flushing)
     # ⚡ Keep a copy of the index in memory ⚡
-    SSTable.Index.remember(flushed_sst, sparse_index)
+    SSTable.Index.remember(flushed_sst_path, sparse_index)
+
+    # Create a cuckoo filter in memory for this table
+    CuckooFilter.remember(flushed_sst_path, :gb_trees.keys(flushing))
 
     # Finished.  Clear the flushing table state.
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->

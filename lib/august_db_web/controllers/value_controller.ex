@@ -19,7 +19,7 @@ defmodule AugustDbWeb.ValueController do
         send_404(conn)
 
       :none ->
-        case SSTable.query_all(key) do
+        case SSTable.query(key, CuckooFilter.eliminate(key)) do
           :tombstone ->
             send_404(conn)
 
