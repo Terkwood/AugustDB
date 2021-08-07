@@ -1,7 +1,7 @@
 NimbleCSV.define(CommitLogParser, separator: TSV.col_separator(), escape: "\"")
 
 defmodule CommitLog do
-  @tsv_header_string "key\tvalue\ttime\tcrc32\n"
+  @tsv_header_string "k\tv\tt\tc\n"
   @tombstone_string Tombstone.string()
   @log_file "commit.log"
 
