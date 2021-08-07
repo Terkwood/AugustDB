@@ -18,7 +18,7 @@ defmodule SSTable.Compaction do
       :noop ->
         :noop
 
-      {sst_filename, sparse_index} ->
+      {sst_filename, sparse_index, all_keys_written} ->
         for p <- old_sst_paths do
           File.rm!(p)
           File.rm!(hd(String.split(p, ".sst")) <> ".idx")
@@ -26,9 +26,11 @@ defmodule SSTable.Compaction do
 
         # save the new index into main memory
         SSTable.Index.remember(sst_filename, sparse_index)
-
         # evict all the defunct indices from main memory
         SSTable.Index.evict()
+
+        # Update the cuckoo filter for this table
+        CuckooFilter.remember(sst_filename, all_keys_written)
 
         sst_filename
     end
@@ -132,7 +134,7 @@ defmodule SSTable.Compaction do
 
         {:ok, output_sst} = :file.open(output_path, [:raw, :append])
 
-        index =
+        {index, all_keys_written} =
           compare_and_write_chunks(
             many_kv_devices_chunks,
             output_sst,
@@ -141,7 +143,8 @@ defmodule SSTable.Compaction do
               unzipped: <<>>,
               gz_offset: 0
             },
-            nil
+            nil,
+            []
           )
 
         Enum.map(many_devices, &:file.close(&1))
@@ -151,7 +154,7 @@ defmodule SSTable.Compaction do
         index_path = hd(String.split(output_path, ".sst")) <> ".idx"
         File.write!(index_path, index_binary)
 
-        {output_path, index}
+        {output_path, index, all_keys_written}
     end
   end
 
@@ -176,9 +179,10 @@ defmodule SSTable.Compaction do
          _outfile,
          index,
          %Chunk{unzipped: <<>>},
-         _maybe_first_chunk_key
+         _maybe_first_chunk_key,
+         all_keys_written
        ) do
-    Enum.reverse(index)
+    {Enum.reverse(index), all_keys_written}
   end
 
   defp compare_and_write_chunks(
@@ -186,13 +190,14 @@ defmodule SSTable.Compaction do
          output_device,
          index,
          %Chunk{unzipped: leftover, gz_offset: gz_offset},
-         chunk_key
+         chunk_key,
+         all_keys_written
        )
        when is_binary(chunk_key) do
     gz_chunk = :zlib.gzip(leftover)
     write_chunk(gz_chunk, output_device)
 
-    Enum.reverse([{chunk_key, gz_offset} | index])
+    {Enum.reverse([{chunk_key, gz_offset} | index]), all_keys_written}
   end
 
   defp compare_and_write_chunks(
@@ -200,7 +205,8 @@ defmodule SSTable.Compaction do
          output_device,
          index,
          %Chunk{unzipped: output_payload, gz_offset: output_gz_offset},
-         maybe_first_chunk_key
+         maybe_first_chunk_key,
+         all_keys_written
        )
        when is_list(many_kv_devices_chunks) do
     {the_lowest_key, the_lowest_value} =
@@ -273,7 +279,13 @@ defmodule SSTable.Compaction do
         _ -> true
       end
     end)
-    |> compare_and_write_chunks(output_device, next_index, next_output_chunk, next_chunk_key)
+    |> compare_and_write_chunks(
+      output_device,
+      next_index,
+      next_output_chunk,
+      next_chunk_key,
+      all_keys_written
+    )
   end
 
   @gzip_length_bytes SSTable.Settings.gzip_length_bytes()

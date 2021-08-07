@@ -31,7 +31,7 @@ defmodule CuckooFilter do
     Agent.update(__MODULE__, &Map.drop(&1, [sst_path]))
   end
 
-  def initialize(sst_path, memtable_keys) do
+  def remember(sst_path, memtable_keys) do
     filter = :cuckoo_filter.new(max(length(memtable_keys), 1))
 
     for key <- memtable_keys do

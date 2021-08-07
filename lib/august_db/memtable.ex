@@ -76,7 +76,7 @@ defmodule Memtable do
     SSTable.Index.remember(flushed_sst_path, sparse_index)
 
     # Create a cuckoo filter in memory for this table
-    CuckooFilter.initialize(flushed_sst_path, :gb_trees.keys(flushing))
+    CuckooFilter.remember(flushed_sst_path, :gb_trees.keys(flushing))
 
     # Finished.  Clear the flushing table state.
     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
