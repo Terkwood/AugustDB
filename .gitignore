@@ -41,3 +41,9 @@ commit.log
 # Backups of the commit log created
 # when Memtable.flush() runs
 *.bak
+# ignore env configuration
+*.env
+# ignore jmeter log
+jmeter.log
+# ignore all log files
+*.log
