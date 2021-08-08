@@ -1,15 +1,28 @@
 NimbleCSV.define(CommitLogParser, separator: TSV.col_separator(), escape: "\"")
 
 defmodule CommitLog do
+  use GenServer
+
   @tsv_header_string "k\tv\tt\tc\n"
   @tombstone_string Tombstone.string()
   @log_file "commit.log"
+
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, nil, name: MemtableSizer)
+  end
+
+  def init(nil) do
+    {:ok, device_out} = :file.open(@log_file, [:append])
+    {:ok, device_out}
+  end
 
   def append(key, :tombstone) do
     __MODULE__.append(key, @tombstone_string)
   end
 
   def append(key, value) do
+    ## MAKE SURE TO ONLY USE THE :file.write FUNCTION
+    # https://erlang.org/doc/man/file.html#open-2
     <<crc32::32>> = Checksum.create(key <> value)
 
     File.write!(
