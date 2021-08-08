@@ -32,14 +32,6 @@ defmodule AugustDbWeb.ValueController do
     end
   end
 
-  defp send_404(conn) do
-    send_resp(conn, 404, "")
-  end
-
-  defp send_422(conn) do
-    send_resp(conn, 422, "Binary data cannot be displayed")
-  end
-
   @doc """
   # Update as form data or as JSON object
 
@@ -91,5 +83,13 @@ defmodule AugustDbWeb.ValueController do
     Memtable.delete(key)
 
     send_resp(conn, 204, "")
+  end
+
+  defp send_404(conn) do
+    send_resp(conn, 404, "")
+  end
+
+  defp send_422(conn) do
+    send_resp(conn, 422, "Binary data cannot be displayed")
   end
 end

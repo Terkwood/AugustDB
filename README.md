@@ -30,25 +30,30 @@ To run in _prod mode_ with some optimizations, you first need to follow the [Pho
 
 ## Making HTTP calls
 
-Create a record
+### Create or update a record
+
+Using simple JSON string:
 
 ```sh
-curl -X PUT  -d value='meh meh'  http://localhost:4000/api/values/1
+curl -X PUT  -H 'Content-Type: application/json' -d '"meh meh"'  http://localhost:4000/api/values/1
 ```
 
-Update a record
+Using form data:
 
 ```sh
-curl -X PUT  -d value='n0 n0'  http://localhost:4000/api/values/1
+curl -X PUT -d value='meh meh'  http://localhost:4000/api/values/1
 ```
 
-Get a record
+
+### Get a record
+
+Returns `Content-Type: application/json`.
 
 ```sh
-curl  http://localhost:4000/api/values/1
+curl http://localhost:4000/api/values/1
 ```
 
-Delete a record
+### Delete a record
 
 ```sh
 curl -X DELETE http://localhost:4000/api/values/1
