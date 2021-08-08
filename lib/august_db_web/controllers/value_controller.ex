@@ -42,8 +42,16 @@ defmodule AugustDbWeb.ValueController do
 
   @doc """
   e.g.
+  You can put this as form data
   ```sh
   curl -X PUT  -d value='meh meh'  http://localhost:4000/api/values/1
+  ```
+
+  Or as JSON.  Sorry, but you can't just pass a string...
+  You need to pass a JSON object with a `value` field.
+
+  ```sh
+  curl -X PUT -H 'Content-Type: application/json' -d '{"value": "meh meh"}' http://localhost:4000/api/values/1
   ```
   """
   def update(conn, %{"id" => key, "value" => value})
