@@ -4,7 +4,7 @@ defmodule AugustDb.MixProject do
   def project do
     [
       app: :august_db,
-      version: "0.4.3-a",
+      version: "0.4.3",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
