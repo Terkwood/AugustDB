@@ -16,7 +16,7 @@ defmodule CommitLog do
     {:ok, device_out}
   end
 
-  def handle_cast({:append, payload}, _from, device_out) do
+  def handle_cast({:append, payload}, device_out) do
     :file.write(device_out, payload)
     {:noreply, device_out}
   end
@@ -32,14 +32,15 @@ defmodule CommitLog do
 
     GenServer.cast(
       CommitLogDevice,
-      key <>
-        TSV.col_separator() <>
-        value <>
-        TSV.col_separator() <>
-        "#{:erlang.monotonic_time()}" <>
-        TSV.col_separator() <>
-        Integer.to_string(crc32, 16) <>
-        TSV.row_separator()
+      {:append,
+       key <>
+         TSV.col_separator() <>
+         value <>
+         TSV.col_separator() <>
+         "#{:erlang.monotonic_time()}" <>
+         TSV.col_separator() <>
+         Integer.to_string(crc32, 16) <>
+         TSV.row_separator()}
     )
   end
 
