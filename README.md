@@ -16,13 +16,17 @@ We use phoenix to expose a REST API (PUT, GET, DEL) for creating, reading, updat
 
 ## Webservice operation
 
-To start the Phoenix server:
+To start the Phoenix server in _dev mode_:
 
 - Install dependencies with `mix deps.get`
 - Install Node.js dependencies with `npm install` inside the `assets` directory
 - Start Phoenix endpoint with `mix phx.server`
 
 Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+
+To run in _prod mode_ with some optimizations, you first need to follow the [Phoenix deployment instructions](https://hexdocs.pm/phoenix/deployment.html) to generate a secret, etc.  Then:
+
+`PORT=4001 MIX_ENV=prod mix phx.server`
 
 ## Making HTTP calls
 

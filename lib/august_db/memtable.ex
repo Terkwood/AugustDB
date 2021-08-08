@@ -64,10 +64,7 @@ defmodule Memtable do
       }
     end)
 
-    # We should start a new commit log now.
-    # Let's keep a copy of the old one around just in case
-    # we crash (though we don't actually do anything with it)
-    commit_log_backup = CommitLog.backup()
+    # Start a new commit log
     CommitLog.new()
 
     # Write the current memtable to disk in a binary format
@@ -85,10 +82,6 @@ defmodule Memtable do
         flushing: :gb_trees.empty()
       }
     end)
-
-    # Make sure we clean up the backup commit log.  Since the
-    # flush was successful, we don't need it.
-    File.rm!(commit_log_backup)
   end
 
   @doc """

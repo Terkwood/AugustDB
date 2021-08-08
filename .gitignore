@@ -38,9 +38,6 @@ npm-debug.log
 *.idx
 # AugustDB commit log
 commit.log
-# Backups of the commit log created
-# when Memtable.flush() runs
-*.bak
 # ignore env configuration
 *.env
 # ignore jmeter log
