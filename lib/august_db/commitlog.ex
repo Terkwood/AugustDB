@@ -8,12 +8,17 @@ defmodule CommitLog do
   @log_file "commit.log"
 
   def start_link(_) do
-    GenServer.start_link(__MODULE__, nil, name: MemtableSizer)
+    GenServer.start_link(__MODULE__, nil, name: CommitLogDevice)
   end
 
   def init(nil) do
     {:ok, device_out} = :file.open(@log_file, [:append])
     {:ok, device_out}
+  end
+
+  def handle_cast({:append, payload}, _from, device_out) do
+    :file.write(device_out, payload)
+    {:noreply, device_out}
   end
 
   def append(key, :tombstone) do
@@ -25,8 +30,8 @@ defmodule CommitLog do
     # https://erlang.org/doc/man/file.html#open-2
     <<crc32::32>> = Checksum.create(key <> value)
 
-    File.write!(
-      @log_file,
+    GenServer.cast(
+      CommitLogDevice,
       key <>
         TSV.col_separator() <>
         value <>
@@ -34,8 +39,7 @@ defmodule CommitLog do
         "#{:erlang.monotonic_time()}" <>
         TSV.col_separator() <>
         Integer.to_string(crc32, 16) <>
-        TSV.row_separator(),
-      [:append]
+        TSV.row_separator()
     )
   end
 

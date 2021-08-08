@@ -7,9 +7,11 @@ defmodule AugustDb.Application do
 
   def start(_type, _args) do
     children = [
+      # Start the CommitLog device genserver
+      CommitLog,
       # Start the Memtable agent
       {Memtable, %Memtable{}},
-      # Start Memtable Size tracker
+      # Start Memtable Size genserver
       Memtable.Sizer,
       # Start the SSTable Index agent
       {SSTable.Index, %{}},
