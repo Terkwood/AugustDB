@@ -48,20 +48,9 @@ defmodule AugustDbWeb.ValueController do
   """
   def update(conn, %{"id" => key, "value" => value})
       when is_binary(key) and is_binary(value) do
-    start_commitlog_append = :os.system_time()
     CommitLog.append(key, value)
-    stop_commitlog_append = :os.system_time()
 
-    start_memtable_update = :os.system_time()
     Memtable.update(key, value)
-    stop_memtable_update = :os.system_time()
-
-    commitlog_append_time = stop_commitlog_append - start_commitlog_append
-    memtable_update_time = stop_memtable_update - start_memtable_update
-
-    IO.puts(
-      "Commitlog append time: #{commitlog_append_time}\tMemtable update time: #{memtable_update_time}"
-    )
 
     send_resp(conn, 204, "")
   end
