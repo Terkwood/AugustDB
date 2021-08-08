@@ -47,15 +47,18 @@ defmodule AugustDbWeb.ValueController do
   curl -X PUT  -d value='meh meh'  http://localhost:4000/api/values/1
   ```
 
-  Or as JSON.  Sorry, but you can't just pass a string...
-  You need to pass a JSON object with a `value` field.
+  The body needs to be a JSON string, thus it needs to have the
+  double quotes (in addition to the single quotes for curl).
+
+  Sorry about that. 🥺
 
   ```sh
-  curl -X PUT -H 'Content-Type: application/json' -d '{"value": "meh meh"}' http://localhost:4000/api/values/1
+  curl -X PUT -H 'Content-Type: application/json' -d '"meh meh"' http://localhost:4000/api/values/1
   ```
   """
-  def update(conn, %{"id" => key, "value" => value})
-      when is_binary(key) and is_binary(value) do
+  def update(conn, %{"id" => key, "_json" => value}) when is_binary(value) and is_binary(key) do
+    cached_body = AugustDbWeb.CacheBodyReader.read_cached_body(conn)
+    IO.puts("cached body: #{cached_body}")
     CommitLog.append(key, value)
 
     Memtable.update(key, value)
