@@ -16,14 +16,14 @@ defmodule CommitLog do
     {:ok, device_out}
   end
 
-  def handle_cast(:new, _) do
+  def handle_cast(:new, old_device_out) do
+    :ok = :file.close(old_device_out)
     :ok = :file.delete(@log_file)
-    {:ok, device_out} = :file.open(@log_file, [:append])
-    {:noreply, device_out}
+    {:ok, new_device_out} = :file.open(@log_file, [:append, :raw])
+    {:noreply, new_device_out}
   end
 
   def handle_cast(:close, device_out) do
-    :ok = :file.close(device_out)
     {:noreply, device_out}
   end
 
@@ -96,8 +96,11 @@ defmodule CommitLog do
     File.touch!(@log_file)
   end
 
+  @doc """
+  Delete the old commit log and open a device  to a new one
+  in raw,append mode.
+  """
   def new() do
-    GenServer.cast(CommitLogDevice, :close)
     GenServer.cast(CommitLogDevice, :new)
   end
 end
