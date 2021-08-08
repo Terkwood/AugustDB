@@ -16,6 +16,17 @@ defmodule CommitLog do
     {:ok, device_out}
   end
 
+  def handle_cast(:new, _) do
+    :ok = :file.delete(@log_file)
+    {:ok, device_out} = :file.open(@log_file, [:append])
+    {:noreply, device_out}
+  end
+
+  def handle_cast(:close, device_out) do
+    :ok = :file.close(device_out)
+    {:noreply, device_out}
+  end
+
   def handle_cast({:append, payload}, device_out) do
     :file.write(device_out, payload)
     {:noreply, device_out}
@@ -81,18 +92,12 @@ defmodule CommitLog do
     |> Stream.run()
   end
 
-  def backup() do
-    output_path = "#{@log_file}.#{:erlang.system_time()}.bak"
-    File.copy!(@log_file, output_path)
-    output_path
-  end
-
   def touch() do
     File.touch!(@log_file)
   end
 
   def new() do
-    File.rm!(@log_file)
-    File.touch!(@log_file)
+    GenServer.cast(CommitLogDevice, :close)
+    GenServer.cast(CommitLogDevice, :new)
   end
 end
