@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.3](https://github.com/Terkwood/AugustDB/compare/v0.4.2...v0.4.3) (2021-08-08)
+
+
+### Bug Fixes
+
+* close and reopen commitlog device in one shot ([21d5ab0](https://github.com/Terkwood/AugustDB/commit/21d5ab0c10be485575e92caa2017a9c236a32a96))
+* improve commitlog write speed ([#90](https://github.com/Terkwood/AugustDB/issues/90)) ([7f681bf](https://github.com/Terkwood/AugustDB/commit/7f681bf8205220358c09cd88c6cc88cad67bee80))
+* put memtable resizing behind genserver ([#93](https://github.com/Terkwood/AugustDB/issues/93)) ([0d6ecd1](https://github.com/Terkwood/AugustDB/commit/0d6ecd10ea7c981655e475d81432fa5eb9d08e37))
+
 ### [0.4.2](https://github.com/Terkwood/AugustDB/compare/v0.4.1...v0.4.2) (2021-08-07)
 
 
