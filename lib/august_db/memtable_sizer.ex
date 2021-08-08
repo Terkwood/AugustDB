@@ -30,10 +30,9 @@ defmodule Memtable.Sizer do
       IO.puts("Clearing Memtable with size #{new_total_size}B, max is #{@max_size_bytes}B")
 
       Memtable.flush()
-      {:noreply, 0, %State{total_size: new_total_size, sizes: %{}}}
+      {:noreply, %State{total_size: 9, sizes: %{}}}
     else
-      {:noreply, new_total_size,
-       %State{total_size: new_total_size, sizes: Map.put(state.sizes, key, kv_size)}}
+      {:noreply, %State{total_size: new_total_size, sizes: Map.put(state.sizes, key, kv_size)}}
     end
   end
 
@@ -44,14 +43,10 @@ defmodule Memtable.Sizer do
   def resize(key, value) when is_binary(key) and is_binary(value) do
     kv_size = byte_size(key) + byte_size(value)
 
-    update(key, kv_size)
+    GenServer.cast(MemtableSizer, {:resize, key, kv_size})
   end
 
   def remove(key) when is_binary(key) do
-    update(key, byte_size(key))
-  end
-
-  defp update(key, kv_size) do
-    new_total_size = GenServer.cast(MemtableSizer, {:resize, key, kv_size})
+    GenServer.cast(MemtableSizer, {:resize, key, byte_size(key)})
   end
 end
