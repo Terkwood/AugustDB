@@ -1,7 +1,7 @@
 defmodule Memtable.Sizer do
   use GenServer
 
-  @max_size_bytes 64 * 1024 * 1024
+  @max_size_bytes 1024 * 1024
 
   defmodule State do
     defstruct total_size: 0, sizes: %{}
