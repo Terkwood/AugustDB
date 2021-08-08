@@ -41,24 +41,37 @@ defmodule AugustDbWeb.ValueController do
   end
 
   @doc """
-  e.g.
+  # Update as form data or as JSON object
+
   You can put this as form data
   ```sh
   curl -X PUT  -d value='meh meh'  http://localhost:4000/api/values/1
   ```
 
-  The body needs to be a JSON string, thus it needs to have the
-  double quotes (in addition to the single quotes for curl).
+  You can also put this as a JSON object
+  ```
+  curl -X PUT  -d '{"value":"meh meh"}'  http://localhost:4000/api/values/1
+  ```
 
-  Sorry about that. 🥺
+  # Update using application/json with a simple string
+
+  The body needs to be a JSON string, thus it needs to have the
+  double quotes (in addition to the single quotes for curl). 🥺
 
   ```sh
   curl -X PUT -H 'Content-Type: application/json' -d '"meh meh"' http://localhost:4000/api/values/1
   ```
   """
+  def update(conn, %{"id" => key, "value" => value})
+      when is_binary(key) and is_binary(value) do
+    update_kv(conn, key, value)
+  end
+
   def update(conn, %{"id" => key, "_json" => value}) when is_binary(value) and is_binary(key) do
-    cached_body = AugustDbWeb.CacheBodyReader.read_cached_body(conn)
-    IO.puts("cached body: #{cached_body}")
+    update_kv(conn, key, value)
+  end
+
+  defp update_kv(conn, key, value) do
     CommitLog.append(key, value)
 
     Memtable.update(key, value)
