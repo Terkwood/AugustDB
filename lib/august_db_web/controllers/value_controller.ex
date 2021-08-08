@@ -40,11 +40,6 @@ defmodule AugustDbWeb.ValueController do
   curl -X PUT  -d value='meh meh'  http://localhost:4000/api/values/1
   ```
 
-  You can also put this as a JSON object
-  ```
-  curl -X PUT  -d '{"value":"meh meh"}'  http://localhost:4000/api/values/1
-  ```
-
   # Update using application/json with a simple string
 
   The body needs to be a JSON string, thus it needs to have the
