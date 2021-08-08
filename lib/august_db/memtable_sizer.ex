@@ -15,7 +15,7 @@ defmodule Memtable.Sizer do
     {:ok, state}
   end
 
-  def handle_call({:resize, key, kv_size}, _from, state) do
+  def handle_cast({:resize, key, kv_size}, state) do
     old_kv_size =
       case Map.get(state.sizes, key) do
         nil -> 0
@@ -26,8 +26,15 @@ defmodule Memtable.Sizer do
 
     new_total_size = state.total_size + kv_size_diff
 
-    {:reply, new_total_size,
-     %State{total_size: new_total_size, sizes: Map.put(state.sizes, key, kv_size)}}
+    if new_total_size > @max_size_bytes do
+      IO.puts("Clearing Memtable with size #{new_total_size}B, max is #{@max_size_bytes}B")
+
+      Memtable.flush()
+      {:noreply, 0, %State{total_size: new_total_size, sizes: %{}}}
+    else
+      {:noreply, new_total_size,
+       %State{total_size: new_total_size, sizes: Map.put(state.sizes, key, kv_size)}}
+    end
   end
 
   def handle_cast(:clear, _state) do
@@ -45,17 +52,6 @@ defmodule Memtable.Sizer do
   end
 
   defp update(key, kv_size) do
-    new_total_size = GenServer.call(MemtableSizer, {:resize, key, kv_size})
-
-    if new_total_size > @max_size_bytes do
-      IO.puts("Clearing Memtable with size #{new_total_size}B, max is #{@max_size_bytes}B")
-
-      Memtable.flush()
-      __MODULE__.clear()
-    end
-  end
-
-  def clear() do
-    GenServer.cast(MemtableSizer, :clear)
+    new_total_size = GenServer.cast(MemtableSizer, {:resize, key, kv_size})
   end
 end
