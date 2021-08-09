@@ -17,7 +17,7 @@ enum VT {
 }
 
 mod atoms {
-    rustler::atoms! { value, tombstone }
+    rustler::atoms! { value, tombstone, none }
 }
 impl From<&VT> for ValTomb {
     fn from(val_tomb: &VT) -> Self {
@@ -69,13 +69,17 @@ pub fn delete(resource: ResourceArc<MemtableResource>, key: &str) -> &'static st
 }
 
 #[rustler::nif]
-pub fn query(resource: ResourceArc<MemtableResource>, key: &str) -> Option<ValTomb> {
+pub fn query(resource: ResourceArc<MemtableResource>, key: &str) -> ValTomb {
     resource
         .current
         .read()
         .unwrap()
         .get(key)
         .map(|vt| ValTomb::from(vt))
+        .unwrap_or(ValTomb {
+            kind: atoms::none(),
+            val_tomb: "".to_string(),
+        })
 }
 
 #[rustler::nif]
