@@ -14,7 +14,7 @@ defmodule Memtable.Dirty do
     throw(NifNotLoadedError)
   end
 
-  def create(), do: err()
+  def new(), do: err()
   def query(resource), do: err()
   def update(resource, number), do: err()
 end
