@@ -22,4 +22,14 @@ defmodule Memtable.Ref do
         # todo none case
     end
   end
+
+  def update(key, value) when is_binary(key) and is_binary(value) do
+    Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _flushing} ->
+      Memtable.Dirty.update(current, key, value)
+    end)
+
+    Memtable.Sizer.resize(key, value)
+
+    :ok
+  end
 end
