@@ -3,6 +3,9 @@
 
 use rustler::{Env, ResourceArc};
 use std::sync::RwLock;
+use intrusive_collections::intrusive_adapter;
+use intrusive_collections::{RBTreeLink, RBTree, KeyAdapter, Bound};
+
 
 pub struct MemtableResource {
     number: RwLock<i32>,
