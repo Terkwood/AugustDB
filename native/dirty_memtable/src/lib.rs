@@ -6,37 +6,17 @@ use std::sync::RwLock;
 use intrusive_collections::{RBTreeLink, RBTree, KeyAdapter, Bound};
 */
 
-#[derive(NifTuple)]
+#[derive(NifTuple, Clone)]
 pub struct ValTomb {
     kind: Atom,
     val_tomb: String,
 }
-enum VT {
-    Value(String),
-    Tombstone,
-}
-
 mod atoms {
     rustler::atoms! { value, tombstone, none }
 }
-impl From<&VT> for ValTomb {
-    fn from(val_tomb: &VT) -> Self {
-        match val_tomb {
-            VT::Value(value) => ValTomb {
-                kind: atoms::value(),
-                val_tomb: value.clone(),
-            },
-            VT::Tombstone => ValTomb {
-                kind: atoms::tombstone(),
-                val_tomb: "".to_string(),
-            },
-        }
-    }
-}
-
 pub struct MemtableResource {
-    current: RwLock<HashMap<String, VT>>,
-    flushing: RwLock<HashMap<String, VT>>,
+    current: RwLock<HashMap<String, ValTomb>>,
+    flushing: RwLock<HashMap<String, ValTomb>>,
 }
 
 pub fn on_load(env: Env) -> bool {
@@ -53,17 +33,27 @@ pub fn new() -> ResourceArc<MemtableResource> {
 }
 
 #[rustler::nif]
-pub fn update(resource: ResourceArc<MemtableResource>, key: &str, value: &str) -> &'static str {
+pub fn update(resource: ResourceArc<MemtableResource>, key: &str, value: &str) {
     let mut current = resource.current.write().unwrap();
-    current.insert(key.to_string(), VT::Value(value.to_string()));
-
-    "ok"
+    current.insert(
+        key.to_string(),
+        ValTomb {
+            kind: atoms::value(),
+            val_tomb: value.to_string(),
+        },
+    );
 }
 
 #[rustler::nif]
 pub fn delete(resource: ResourceArc<MemtableResource>, key: &str) -> &'static str {
     let mut current = resource.current.write().unwrap();
-    current.insert(key.to_string(), VT::Tombstone);
+    current.insert(
+        key.to_string(),
+        ValTomb {
+            kind: atoms::tombstone(),
+            val_tomb: "".to_string(),
+        },
+    );
 
     "ok"
 }
@@ -75,7 +65,7 @@ pub fn query(resource: ResourceArc<MemtableResource>, key: &str) -> ValTomb {
         .read()
         .unwrap()
         .get(key)
-        .map(|vt| ValTomb::from(vt))
+        .map(|r| r.clone())
         .unwrap_or(ValTomb {
             kind: atoms::none(),
             val_tomb: "".to_string(),
