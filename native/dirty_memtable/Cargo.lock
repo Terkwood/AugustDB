@@ -13,6 +13,7 @@ name = "dirty_memtable"
 version = "0.1.0"
 dependencies = [
  "intrusive-collections",
+ "lazy_static",
  "rustler",
 ]
 
