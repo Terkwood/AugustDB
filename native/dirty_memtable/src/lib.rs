@@ -1,3 +1,6 @@
+ 
+ 
+
 use rustler::{Env, ResourceArc};
 use std::sync::RwLock;
 
@@ -31,4 +34,4 @@ pub fn query(resource: ResourceArc<MemtableResource>) -> i32 {
 }
  
 
-rustler::init!("Elixir.Memtable.Dirty", [new, update, query]);
+rustler::init!("Elixir.Memtable.Dirty", [new, update, query], load = on_load);
