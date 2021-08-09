@@ -15,4 +15,10 @@ defmodule DirtyMemtableTest do
 
     assert Memtable.Dirty.query(resource, "foo") == {:value, "qux"}
   end
+
+  test "delete" do
+    resource = Memtable.Dirty.new()
+    Memtable.Dirty.delete(resource, "foo")
+    assert Memtable.Dirty.query(resource, "foo") == {:tombstone, ""}
+  end
 end
