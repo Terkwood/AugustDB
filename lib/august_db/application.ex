@@ -9,8 +9,11 @@ defmodule AugustDb.Application do
     children = [
       # Start the CommitLog device genserver
       CommitLog,
-      # Start the Memtable agent
+      # Start the old style of Memtable agent
       {Memtable, %Memtable{}},
+      # Start the dirty memtable agent !! 🦀
+      {Memtable.Ref,
+       %Memtable.Ref{current: Memtable.Dirty.new(), flushing: Memtable.Dirty.new()}},
       # Start Memtable Size genserver
       Memtable.Sizer,
       # Start the SSTable Index agent
