@@ -1,6 +1,25 @@
-#[rustler::nif]
-fn add(a: i64, b: i64) -> i64 {
-    a + b
+use rustler::{Env, ResourceArc};
+use std::sync::RwLock;
+
+pub struct MemtableResource {
+    no: RwLock<i32>,
 }
 
-rustler::init!("Elixir.Memtable.Dirty", [add]);
+pub fn on_load(env: Env) -> bool {
+    rustler::resource!(MemtableResource, env);
+    true
+}
+
+#[rustler::nif]
+pub fn new() -> ResourceArc<MemtableResource> {
+    ResourceArc::new(MemtableResource {
+        no: RwLock::new(0),
+    })
+}
+
+pub fn lookup() {
+    
+}
+
+
+rustler::init!("Elixir.Memtable.Dirty", [new]);
