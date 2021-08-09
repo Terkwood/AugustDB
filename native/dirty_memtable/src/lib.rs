@@ -16,7 +16,7 @@ mod atoms {
 }
 pub struct MemtableResource {
     current: RwLock<HashMap<String, ValTomb>>,
-    flushing: RwLock<HashMap<String, ValTomb>>,
+    _flushing: RwLock<HashMap<String, ValTomb>>,
 }
 
 pub fn on_load(env: Env) -> bool {
@@ -28,7 +28,7 @@ pub fn on_load(env: Env) -> bool {
 pub fn new() -> ResourceArc<MemtableResource> {
     ResourceArc::new(MemtableResource {
         current: RwLock::new(HashMap::new()),
-        flushing: RwLock::new(HashMap::new()),
+        _flushing: RwLock::new(HashMap::new()),
     })
 }
 
