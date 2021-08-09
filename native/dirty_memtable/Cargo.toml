@@ -1,0 +1,13 @@
+[package]
+name = "dirty_memtable"
+version = "0.1.0"
+authors = []
+edition = "2018"
+
+[lib]
+name = "dirty_memtable"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.22.0"
