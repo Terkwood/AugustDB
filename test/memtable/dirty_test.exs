@@ -24,6 +24,6 @@ defmodule DirtyMemtableTest do
 
   test "query non-existent" do
     resource = Memtable.Dirty.new()
-    Memtable.Dirty.query(resource, "nothing") == {:none, ""}
+    assert Memtable.Dirty.query(resource, "nothing") == {:none, ""}
   end
 end
