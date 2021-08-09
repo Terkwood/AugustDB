@@ -2,7 +2,7 @@ use rustler::{Env, ResourceArc};
 use std::sync::RwLock;
 
 pub struct MemtableResource {
-    no: RwLock<i32>,
+    number: RwLock<i32>,
 }
 
 pub fn on_load(env: Env) -> bool {
@@ -13,13 +13,22 @@ pub fn on_load(env: Env) -> bool {
 #[rustler::nif]
 pub fn new() -> ResourceArc<MemtableResource> {
     ResourceArc::new(MemtableResource {
-        no: RwLock::new(0),
+        number: RwLock::new(0),
     })
 }
 
-pub fn lookup() {
-    
+#[rustler::nif]
+pub fn update(resource: ResourceArc<MemtableResource>, n: i32) -> &'static str {
+    let mut number = resource.number.write().unwrap();
+    *number = n;
+
+    "ok"
 }
 
+#[rustler::nif]
+pub fn query(resource: ResourceArc<MemtableResource>) -> i32 {
+    *resource.number.read().unwrap()
+}
+ 
 
-rustler::init!("Elixir.Memtable.Dirty", [new]);
+rustler::init!("Elixir.Memtable.Dirty", [new, update, query]);
