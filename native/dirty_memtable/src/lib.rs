@@ -12,7 +12,7 @@ pub struct ValTomb {
     val_tomb: String,
 }
 mod atoms {
-    rustler::atoms! { value, tombstone, none }
+    rustler::atoms! { value, tombstone, none, ok }
 }
 pub struct MemtableResource {
     current: RwLock<HashMap<String, ValTomb>>,
@@ -33,7 +33,7 @@ pub fn new() -> ResourceArc<MemtableResource> {
 }
 
 #[rustler::nif]
-pub fn update(resource: ResourceArc<MemtableResource>, key: &str, value: &str) {
+pub fn update(resource: ResourceArc<MemtableResource>, key: &str, value: &str) -> Atom {
     let mut current = resource.current.write().unwrap();
     current.insert(
         key.to_string(),
@@ -42,10 +42,12 @@ pub fn update(resource: ResourceArc<MemtableResource>, key: &str, value: &str) {
             val_tomb: value.to_string(),
         },
     );
+
+    atoms::ok()
 }
 
 #[rustler::nif]
-pub fn delete(resource: ResourceArc<MemtableResource>, key: &str) -> &'static str {
+pub fn delete(resource: ResourceArc<MemtableResource>, key: &str) -> Atom {
     let mut current = resource.current.write().unwrap();
     current.insert(
         key.to_string(),
@@ -55,7 +57,7 @@ pub fn delete(resource: ResourceArc<MemtableResource>, key: &str) -> &'static st
         },
     );
 
-    "ok"
+    atoms::ok()
 }
 
 #[rustler::nif]
