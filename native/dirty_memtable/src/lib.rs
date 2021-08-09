@@ -1,7 +1,7 @@
  
  
 
-use rustler::{Env, ResourceArc};
+use rustler::{Env, ResourceArc, Atom, NifTuple};
 use std::sync::RwLock;
 use std::collections::HashMap;
 
@@ -12,6 +12,12 @@ struct Element {
 
 }*/
 
+
+#[derive(NifTuple)]
+struct ValTomb {
+    kind: Atom,
+    val_tomb: String,
+}
 
 pub enum VT {
     Value(String),
