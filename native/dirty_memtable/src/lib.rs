@@ -34,4 +34,8 @@ pub fn query(resource: ResourceArc<MemtableResource>) -> i32 {
 }
  
 
-rustler::init!("Elixir.Memtable.Dirty", [new, update, query], load = on_load);
+fn load(env: rustler::Env, _: rustler::Term) -> bool {
+    on_load(env);
+    true
+}
+rustler::init!("Elixir.Memtable.Dirty", [new, update, query], load = load);
