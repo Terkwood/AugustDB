@@ -9,10 +9,10 @@ defmodule DirtyMemtableTest do
     assert Task.await(
              Task.async(fn ->
                Memtable.Dirty.update(resource, "foo", "qux")
-               Memtable.Dirty.query(resource)
+               Memtable.Dirty.query(resource, "foo")
              end)
            ) == "qux"
 
-    assert Memtable.Dirty.query(resource) == "qux"
+    assert Memtable.Dirty.query(resource, "foo") == "qux"
   end
 end
