@@ -4,14 +4,14 @@ defmodule ZipTest do
   import SSTable.Zip
 
   test "payload accumulates for small inputs" do
-    {payload, index} = zip([{"a", "b"}, {"yaa", "bb"}])
+    {payload, _index} = zip([{"a", "b"}, {"yaa", "bb"}])
     assert byte_size(payload) > 0
   end
 
   test "back and forth" do
-    {payload, index} = zip([{"maybe", "knot"}, {"no", "yes"}])
+    {payload, _index} = zip([{"maybe", "knot"}, {"no", "yes"}])
 
-    <<chunk_size::32, rest::binary>> = payload
+    <<_chunk_size::32, rest::binary>> = payload
 
     <<first_key_size::32, first_value_size::32, rest_unzipped::binary>> = :zlib.gunzip(rest)
 
@@ -34,7 +34,7 @@ defmodule ZipTest do
   test "adding more data produces an index with multiple entries" do
     input = big_data()
 
-    {payload, index} = zip(input)
+    {_payload, index} = zip(input)
 
     assert Enum.count(index) > 1
   end
@@ -42,7 +42,7 @@ defmodule ZipTest do
   test "zip reduces final payload size vs uncompressed binary KV format" do
     input = big_data()
 
-    {payload, index} = zip(input)
+    {payload, _index} = zip(input)
 
     size_of_payload = byte_size(payload)
 
