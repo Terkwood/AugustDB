@@ -75,7 +75,7 @@ pub fn query(resource: ResourceArc<MemtableResource>, key: &str) -> ValTomb {
 }
 
 #[rustler::nif]
-pub fn flush(resource: ResourceArc<MemtableResource>) {
+pub fn flush(_resource: ResourceArc<MemtableResource>) {
     todo!()
 }
 
