@@ -56,10 +56,17 @@ pub fn delete(resource: ResourceArc<MemtableResource>, key: &str) -> &'static st
 pub fn query(resource: ResourceArc<MemtableResource>, key: &str) -> Option<String> {
     resource.current.read().unwrap().get(key).map(|r|r.to_string())
 }
+
+#[rustler::nif]
+pub fn flush(resource: ResourceArc<MemtableResource> )  {
+    todo!()
+}
+
+
  
 
 fn load(env: rustler::Env, _: rustler::Term) -> bool {
     on_load(env);
     true
 }
-rustler::init!("Elixir.Memtable.Dirty", [new, update, delete, query], load = load);
+rustler::init!("Elixir.Memtable.Dirty", [new, query, update, delete, flush], load = load);
