@@ -32,4 +32,14 @@ defmodule Memtable.Ref do
 
     :ok
   end
+
+  def delete(key) when is_binary(key) do
+    Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _flushing} ->
+      Memtable.Dirty.delete(current, key)
+    end)
+
+    Memtable.Sizer.remove(key)
+
+    :ok
+  end
 end
