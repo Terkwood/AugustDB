@@ -29,7 +29,7 @@ defmodule Memtable.Sizer do
     if new_total_size > @max_size_bytes do
       IO.puts("Clearing Memtable with size #{new_total_size}B, max is #{@max_size_bytes}B")
 
-      Memtable.flush()
+      Memtable.Ref.flush()
       {:noreply, %State{total_size: 9, sizes: %{}}}
     else
       {:noreply, %State{total_size: new_total_size, sizes: Map.put(state.sizes, key, kv_size)}}

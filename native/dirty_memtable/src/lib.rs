@@ -75,8 +75,13 @@ pub fn query(resource: ResourceArc<MemtableResource>, key: &str) -> ValTomb {
 }
 
 #[rustler::nif]
-pub fn flush(_resource: ResourceArc<MemtableResource>) {
-    todo!()
+pub fn to_list(_resource: ResourceArc<MemtableResource>) -> Vec<ValTomb> {
+    vec![]
+}
+
+#[rustler::nif]
+pub fn keys(_resource: ResourceArc<MemtableResource>) -> Vec<String> {
+    vec![]
 }
 
 fn load(env: rustler::Env, _: rustler::Term) -> bool {
@@ -85,6 +90,6 @@ fn load(env: rustler::Env, _: rustler::Term) -> bool {
 }
 rustler::init!(
     "Elixir.Memtable.Dirty",
-    [new, query, update, delete, flush],
+    [new, query, update, delete, to_list, keys],
     load = load
 );
