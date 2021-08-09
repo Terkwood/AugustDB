@@ -8,17 +8,22 @@ defmodule Memtable.Ref do
   end
 
   def query(key) do
-    Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: flushing} ->
-      case Memtable.Dirty.query(current, key) do
-        {:none, _} -> Memtable.Dirty.query(flushing, key)
-        some -> some
-      end
-    end)
+    case Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: flushing} ->
+           case Memtable.Dirty.query(current, key) do
+             {:none, _} -> Memtable.Dirty.query(flushing, key)
+             some -> some
+           end
+         end) do
+      # hide the empty string that we used in rust
+      {:tombstone, ""} -> :tombstone
+      {:none, ""} -> :none
+      value -> value
+    end
   end
 
   def update(key, value) when is_binary(key) and is_binary(value) do
     Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _flushing} ->
-      Memtable.Dirty.update(current, key, value)
+      :ok = Memtable.Dirty.update(current, key, value)
     end)
 
     Memtable.Sizer.resize(key, value)
@@ -28,7 +33,7 @@ defmodule Memtable.Ref do
 
   def delete(key) when is_binary(key) do
     Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _flushing} ->
-      Memtable.Dirty.delete(current, key)
+      :ok = Memtable.Dirty.delete(current, key)
     end)
 
     Memtable.Sizer.remove(key)
