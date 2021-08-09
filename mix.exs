@@ -8,6 +8,7 @@ defmodule AugustDb.MixProject do
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext, :rustler] ++ Mix.compilers(),
+      build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -48,7 +49,7 @@ defmodule AugustDb.MixProject do
       {:cuckoo_filter, "~> 0.3.1"},
       {:nimble_csv, "~> 1.1"},
       {:xxh3, "~> 0.3.2"},
-      {:rustler, "~> 0.22.0"}
+      {:rustler, "~> 0.22.0", runtime: false}
     ]
   end
 
