@@ -30,8 +30,26 @@ defmodule Memtable do
   end
 
   def flush() do
-    flushing = Memtable.Dirty.prepare_flush()
-    nil
+    case Memtable.Dirty.prepare_flush() do
+      # flush is pending -- do nothing
+      {:stop, _} ->
+        nil
+
+      {:proceed, old_tree} ->
+        # Start a new commit log
+        CommitLog.new()
+
+        # Write the current memtable to disk in a binary format
+        {flushed_sst_path, sparse_index} = SSTable.dump(old_tree)
+        # ⚡ Keep a copy of the index in memory ⚡
+        SSTable.Index.remember(flushed_sst_path, sparse_index)
+
+        # Create a cuckoo filter in memory for this table
+        CuckooFilter.remember(flushed_sst_path, :gb_trees.keys(old_tree))
+
+        # Finished.  Clear the flushing table state.
+        Memtable.Dirty.finalize_flush()
+    end
   end
 
   def real_flush() do
@@ -48,36 +66,6 @@ defmodule Memtable do
     #   # flush is pending, don't start multiple
     #   {:stop, _} ->
     #     nil
-
-    #   {:proceed, old_tree} ->
-    #     # Forget about whatever we were flushing before,
-    #     # and move the current memtable into the flushing state.
-    #     # Then clear the current memtable.
-    #     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
-    #       %__MODULE__{
-    #         current: :gb_trees.empty(),
-    #         flushing: current
-    #       }
-    #     end)
-
-    #     # Start a new commit log
-    #     CommitLog.new()
-
-    #     # Write the current memtable to disk in a binary format
-    #     {flushed_sst_path, sparse_index} = SSTable.dump(old_tree)
-    #     # ⚡ Keep a copy of the index in memory ⚡
-    #     SSTable.Index.remember(flushed_sst_path, sparse_index)
-
-    #     # Create a cuckoo filter in memory for this table
-    #     CuckooFilter.remember(flushed_sst_path, :gb_trees.keys(old_tree))
-
-    #     # Finished.  Clear the flushing table state.
-    #     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
-    #       %__MODULE__{
-    #         current: current,
-    #         flushing: :gb_trees.empty()
-    #       }
-    #     end)
   end
 
   @doc """

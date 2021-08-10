@@ -12,4 +12,5 @@ defmodule Memtable.Dirty do
   def update(_key, _value), do: :erlang.nif_error(:nif_not_loaded)
   def delete(_key), do: :erlang.nif_error(:nif_not_loaded)
   def prepare_flush(), do: :erlang.nif_error(:nif_not_loaded)
+  def finalize_flush(), do: :erlang.nif_error(:nif_not_loaded)
 end

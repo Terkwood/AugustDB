@@ -20,6 +20,7 @@ pub enum VT {
 
 lazy_static::lazy_static! {
     static ref CURRENT: Mutex<RedBlackTreeMapSync<String, VT>> = Mutex::new(RedBlackTreeMap::new_sync());
+    static ref FLUSHING: Mutex<RedBlackTreeMapSync<String, VT>> = Mutex::new(RedBlackTreeMap::new_sync());
 }
 
 impl From<&VT> for ValTomb {
@@ -81,14 +82,32 @@ pub fn query(key: &str) -> ValTomb {
 /// which need to be flushed to disk.
 #[rustler::nif]
 pub fn prepare_flush() -> PrepareFlushStatus {
-    if false {
+    let mut flushing = FLUSHING.lock().unwrap();
+    if flushing.is_empty() {
         PrepareFlushStatus {
             status: atoms::stop(),
             flushing: vec![],
         }
     } else {
-        todo!("write me")
+        let mut current = CURRENT.lock().unwrap();
+        let kvs_out = to_kvs(&current);
+        *flushing = current.clone();
+
+        *current = RedBlackTreeMap::new_sync();
+        PrepareFlushStatus {
+            status: atoms::proceed(),
+            flushing: kvs_out,
+        }
     }
+}
+
+fn to_kvs(_tree: &RedBlackTreeMapSync<String, VT>) -> Vec<ValTomb> {
+    todo!()
+}
+
+#[rustler::nif]
+pub fn finalize_flush() {
+    todo!()
 }
 
 fn load(_: rustler::Env, _: rustler::Term) -> bool {
@@ -97,6 +116,6 @@ fn load(_: rustler::Env, _: rustler::Term) -> bool {
 
 rustler::init!(
     "Elixir.Memtable.Dirty",
-    [query, update, delete, prepare_flush],
+    [query, update, delete, prepare_flush, finalize_flush],
     load = load
 );
