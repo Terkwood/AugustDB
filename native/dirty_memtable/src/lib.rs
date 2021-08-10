@@ -46,7 +46,7 @@ lazy_static::lazy_static! {
 
 impl From<&VT> for ValTomb {
     fn from(vt: &VT) -> Self {
-        match *vt {
+        match vt {
             VT::Tombstone => ValTomb {
                 kind: atoms::tombstone(),
                 val_tomb: "".to_string(),
