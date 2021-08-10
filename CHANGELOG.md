@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.5](https://github.com/Terkwood/AugustDB/compare/v0.4.4...v0.4.5) (2021-08-10)
+
+
+### Bug Fixes
+
+* memtable flush guards ([e3915d9](https://github.com/Terkwood/AugustDB/commit/e3915d9005c83b84fa18db59a9babb836b7f6b34))
+* trim sql dependencies ([d2940af](https://github.com/Terkwood/AugustDB/commit/d2940af1200a701f51058c6cb03d8e45bc8e3f5c))
+
 ### [0.4.4](https://github.com/Terkwood/AugustDB/compare/v0.4.3...v0.4.4) (2021-08-10)
 
 
