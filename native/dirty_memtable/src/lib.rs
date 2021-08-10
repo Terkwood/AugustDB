@@ -9,7 +9,7 @@ use std::sync::Mutex;
 #[derive(NifTuple, Clone)]
 pub struct ValTomb {
     kind: Atom,
-    val_tomb: String,
+    value: String,
 }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -27,11 +27,11 @@ impl From<&VT> for ValTomb {
         match vt {
             VT::Tombstone => ValTomb {
                 kind: atoms::tombstone(),
-                val_tomb: "".to_string(),
+                value: "".to_string(),
             },
             VT::Value(v) => ValTomb {
                 kind: atoms::value(),
-                val_tomb: v.to_string(),
+                value: v.to_string(),
             },
         }
     }
@@ -65,7 +65,7 @@ pub fn query(key: &str) -> ValTomb {
         .map(|r| ValTomb::from(r))
         .unwrap_or(ValTomb {
             kind: atoms::none(),
-            val_tomb: "".to_string(),
+            value: "".to_string(),
         })
 }
 
