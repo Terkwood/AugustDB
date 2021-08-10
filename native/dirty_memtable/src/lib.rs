@@ -1,24 +1,36 @@
+mod atoms {
+    rustler::atoms! { value, tombstone, none, ok }
+}
+
 use rustler::{Atom, Env, NifTuple, ResourceArc};
 use std::collections::HashMap;
 use std::sync::RwLock;
 
-/*use intrusive_collections::intrusive_adapter;
-use intrusive_collections::{RBTreeLink, RBTree, KeyAdapter, Bound};
-*/
+use intrusive_collections::intrusive_adapter;
+use intrusive_collections::{KeyAdapter, RBTree, RBTreeLink};
+use std::rc::Rc;
+
+pub struct MemtableEntry {
+    link: RBTreeLink,
+    pub key: String,
+    pub value: ValTomb,
+}
 
 #[derive(NifTuple, Clone)]
 pub struct ValTomb {
     kind: Atom,
     val_tomb: String,
 }
-mod atoms {
-    rustler::atoms! { value, tombstone, none, ok }
+
+intrusive_adapter!(MemtableAdapter = Rc<MemtableEntry>: MemtableEntry { link: RBTreeLink });
+impl<'a> KeyAdapter<'a> for MemtableAdapter {
+    type Key = String;
+    fn get_key(&self, x: &'a MemtableEntry) -> String {
+        x.key.clone()
+    }
 }
+
 pub struct MemtableResource(RwLock<HashMap<String, ValTomb>>);
-pub fn on_load(env: Env) -> bool {
-    rustler::resource!(MemtableResource, env);
-    true
-}
 
 lazy_static::lazy_static! {
     static ref CURRENT: RwLock<HashMap<String,ValTomb>> = RwLock::new(HashMap::new());
@@ -73,10 +85,15 @@ pub fn keys(_resource: ResourceArc<MemtableResource>) -> Vec<String> {
     vec![]
 }
 
+pub fn on_load(env: Env) -> bool {
+    rustler::resource!(MemtableResource, env);
+    true
+}
 fn load(env: rustler::Env, _: rustler::Term) -> bool {
     on_load(env);
     true
 }
+
 rustler::init!(
     "Elixir.Memtable.Dirty",
     [query, update, delete],
