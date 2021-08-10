@@ -8,7 +8,7 @@ This project is a work in progress 🚧 and is being developed primarily to suit
 
 All writes are first written to a commit log, protecting against crashes.
 
-Newly written values are stored in a memtable backed by [:gb_trees](https://erlang.org/doc/man/gb_trees.html).
+Newly written values are stored in a memtable backed by a Red Black tree, implemented using [a NIF written in rust](https://github.com/Terkwood/AugustDB/pull/102).
 
 [We define a binary SSTable format](#sstable-format).
 
