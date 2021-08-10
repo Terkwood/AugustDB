@@ -63,7 +63,7 @@ defmodule SSTable do
   ### Combined with Memtable
 
   ```elixir
-  Memtable.Ref.update("bar","BAZ"); Memtable.Ref.delete("foo"); Memtable.Ref.flush()
+  Memtable.update("bar","BAZ"); Memtable.delete("foo"); Memtable.flush()
   :ok
   SSTable.query("bar")
   "BAZ"
