@@ -33,12 +33,12 @@ defmodule Memtable do
     case Memtable.Dirty.prepare_flush() do
       # flush is pending -- do nothing
       {:stop, _} ->
-        IO.puts("no")
         nil
 
       {:proceed, old_tree} ->
-        IO.puts("yes")
-        # Start a new commit log
+        # WRONG LOGIC: Start a new commit log
+        # this won't work if you're reading thru
+        # all the old commits in replay mode
         CommitLog.new()
 
         # Write the current memtable to disk in a binary format
