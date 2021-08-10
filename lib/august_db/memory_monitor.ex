@@ -14,8 +14,7 @@ defmodule MemoryMonitor do
 
   def handle_info(:work, state) do
     for {type, size} <- :erlang.memory() do
-      ts = "#{type}"
-      padded = String.pad_leading(ts, 10, " ")
+      padded = String.pad_leading("#{type}", 10, " ")
       IO.puts("#{padded}\t#{size}")
     end
 
