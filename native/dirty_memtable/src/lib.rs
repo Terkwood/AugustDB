@@ -41,7 +41,7 @@ pub enum VT {
 //pub struct MemtableResource(RwLock<HashMap<String, ValTomb>>);
 
 lazy_static::lazy_static! {
-    static ref CURRENT: Mutex<RedBlackTreeMapSync<String, VT>> = Mutex::new(RedBlackTreeMap::new_sync());
+    static ref CURRENT: RwLock<RedBlackTreeMapSync<String, VT>> = RwLock::new(RedBlackTreeMap::new_sync());
 }
 
 impl From<&VT> for ValTomb {
@@ -61,7 +61,7 @@ impl From<&VT> for ValTomb {
 
 #[rustler::nif]
 pub fn update(key: &str, value: &str) -> Atom {
-    let mut guard = CURRENT.lock().unwrap();
+    let mut guard = CURRENT.write().unwrap();
     let next = guard.insert(key.to_string(), VT::Value(value.to_string()));
     *guard = next;
 
@@ -70,7 +70,7 @@ pub fn update(key: &str, value: &str) -> Atom {
 
 #[rustler::nif]
 pub fn delete(key: &str) -> Atom {
-    let mut guard = CURRENT.lock().unwrap();
+    let mut guard = CURRENT.write().unwrap();
 
     let next = guard.insert(key.to_string(), VT::Tombstone);
     *guard = next;
@@ -81,7 +81,7 @@ pub fn delete(key: &str) -> Atom {
 #[rustler::nif]
 pub fn query(key: &str) -> ValTomb {
     CURRENT
-        .lock()
+        .read()
         .unwrap()
         .get(key)
         .map(|r| ValTomb::from(r))
