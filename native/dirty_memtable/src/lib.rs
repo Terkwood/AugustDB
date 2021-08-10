@@ -3,34 +3,15 @@ mod atoms {
 }
 
 use rpds::map::red_black_tree_map::RedBlackTreeMap;
-use rpds::{RedBlackTreeMapSync, RedBlackTreeSetSync};
-use rustler::{Atom, Env, NifTuple, ResourceArc};
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex, RwLock};
+use rpds::RedBlackTreeMapSync;
+use rustler::{Atom, NifTuple};
+use std::sync::Mutex;
 
 #[derive(NifTuple, Clone)]
 pub struct ValTomb {
     kind: Atom,
-    val_tomb: String,
+    value: String,
 }
-
-// use archery::*;
-
-// #[derive(PartialEq, Eq, PartialOrd, Ord)]
-// struct KeyValuePair<K, V, P: SharedPointerKind> {
-//     pub key: SharedPointer<K, P>,
-//     pub value: SharedPointer<V, P>,
-// }
-
-// impl<K, V, P: SharedPointerKind> KeyValuePair<K, V, P> {
-//     fn new(key: K, value: V) -> KeyValuePair<K, V, P> {
-//         KeyValuePair {
-//             key: SharedPointer::new(key),
-//             value: SharedPointer::new(value),
-//         }
-//     }
-// }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum VT {
@@ -49,11 +30,11 @@ impl From<&VT> for ValTomb {
         match vt {
             VT::Tombstone => ValTomb {
                 kind: atoms::tombstone(),
-                val_tomb: "".to_string(),
+                value: "".to_string(),
             },
             VT::Value(v) => ValTomb {
                 kind: atoms::value(),
-                val_tomb: v.to_string(),
+                value: v.to_string(),
             },
         }
     }
@@ -87,7 +68,7 @@ pub fn query(key: &str) -> ValTomb {
         .map(|r| ValTomb::from(r))
         .unwrap_or(ValTomb {
             kind: atoms::none(),
-            val_tomb: "".to_string(),
+            value: "".to_string(),
         })
 }
 
@@ -101,12 +82,7 @@ pub fn keys() -> Vec<String> {
     vec![]
 }
 
-pub fn on_load(env: Env) -> bool {
-    //rustler::resource!(MemtableResource, env);
-    true
-}
-fn load(env: rustler::Env, _: rustler::Term) -> bool {
-    on_load(env);
+fn load(_: rustler::Env, _: rustler::Term) -> bool {
     true
 }
 
