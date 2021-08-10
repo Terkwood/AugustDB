@@ -2,19 +2,12 @@ mod atoms {
     rustler::atoms! { value, tombstone, none, ok }
 }
 
+use rpds::map::red_black_tree_map::RedBlackTreeMap;
+use rpds::{RedBlackTreeMapSync, RedBlackTreeSetSync};
 use rustler::{Atom, Env, NifTuple, ResourceArc};
 use std::collections::HashMap;
-use std::sync::RwLock;
-
-use intrusive_collections::intrusive_adapter;
-use intrusive_collections::{KeyAdapter, RBTree, RBTreeLink};
 use std::rc::Rc;
-
-pub struct MemtableEntry {
-    link: RBTreeLink,
-    pub key: String,
-    pub value: ValTomb,
-}
+use std::sync::{Arc, RwLock};
 
 #[derive(NifTuple, Clone)]
 pub struct ValTomb {
@@ -22,42 +15,54 @@ pub struct ValTomb {
     val_tomb: String,
 }
 
-intrusive_adapter!(MemtableAdapter = Rc<MemtableEntry>: MemtableEntry { link: RBTreeLink });
-impl<'a> KeyAdapter<'a> for MemtableAdapter {
-    type Key = String;
-    fn get_key(&self, x: &'a MemtableEntry) -> String {
-        x.key.clone()
+use archery::*;
+
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+struct KeyValuePair<K, V, P: SharedPointerKind> {
+    pub key: SharedPointer<K, P>,
+    pub value: SharedPointer<V, P>,
+}
+
+impl<K, V, P: SharedPointerKind> KeyValuePair<K, V, P> {
+    fn new(key: K, value: V) -> KeyValuePair<K, V, P> {
+        KeyValuePair {
+            key: SharedPointer::new(key),
+            value: SharedPointer::new(value),
+        }
     }
 }
 
-pub struct MemtableResource(RwLock<HashMap<String, ValTomb>>);
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub enum VT {
+    Value(String),
+    Tombstone,
+}
+
+//pub struct MemtableResource(RwLock<HashMap<String, ValTomb>>);
 
 lazy_static::lazy_static! {
-    static ref CURRENT: RwLock<HashMap<String,ValTomb>> = RwLock::new(HashMap::new());
+    static ref CURRENT: RwLock<RedBlackTreeMapSync< String, String>> = RwLock::new(RedBlackTreeMap::new_sync());
 }
+/*fn tryit() {
+    let rbts = RwLock::new(RedBlackTreeMap::new_sync());
+}*/
 
 #[rustler::nif]
 pub fn update(key: &str, value: &str) -> Atom {
-    CURRENT.write().unwrap().insert(
-        key.to_string(),
-        ValTomb {
-            kind: atoms::value(),
-            val_tomb: value.to_string(),
-        },
-    );
+    CURRENT
+        .write()
+        .unwrap()
+        .insert(key.to_string(), value.to_string());
 
     atoms::ok()
 }
 
 #[rustler::nif]
 pub fn delete(key: &str) -> Atom {
-    CURRENT.write().unwrap().insert(
-        key.to_string(),
-        ValTomb {
-            kind: atoms::tombstone(),
-            val_tomb: "".to_string(),
-        },
-    );
+    CURRENT
+        .write()
+        .unwrap()
+        .insert(key.to_string(), "TOMBSTONE".to_string());
 
     atoms::ok()
 }
@@ -76,17 +81,17 @@ pub fn query(key: &str) -> ValTomb {
 }
 
 #[rustler::nif]
-pub fn to_list(_resource: ResourceArc<MemtableResource>) -> Vec<ValTomb> {
+pub fn to_list() -> Vec<ValTomb> {
     vec![]
 }
 
 #[rustler::nif]
-pub fn keys(_resource: ResourceArc<MemtableResource>) -> Vec<String> {
+pub fn keys() -> Vec<String> {
     vec![]
 }
 
 pub fn on_load(env: Env) -> bool {
-    rustler::resource!(MemtableResource, env);
+    //rustler::resource!(MemtableResource, env);
     true
 }
 fn load(env: rustler::Env, _: rustler::Term) -> bool {
@@ -96,6 +101,6 @@ fn load(env: rustler::Env, _: rustler::Term) -> bool {
 
 rustler::init!(
     "Elixir.Memtable.Dirty",
-    [query, update, delete],
+    [query, update, delete, keys, to_list],
     load = load
 );
