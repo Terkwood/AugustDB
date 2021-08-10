@@ -15,22 +15,22 @@ pub struct ValTomb {
     val_tomb: String,
 }
 
-use archery::*;
+// use archery::*;
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-struct KeyValuePair<K, V, P: SharedPointerKind> {
-    pub key: SharedPointer<K, P>,
-    pub value: SharedPointer<V, P>,
-}
+// #[derive(PartialEq, Eq, PartialOrd, Ord)]
+// struct KeyValuePair<K, V, P: SharedPointerKind> {
+//     pub key: SharedPointer<K, P>,
+//     pub value: SharedPointer<V, P>,
+// }
 
-impl<K, V, P: SharedPointerKind> KeyValuePair<K, V, P> {
-    fn new(key: K, value: V) -> KeyValuePair<K, V, P> {
-        KeyValuePair {
-            key: SharedPointer::new(key),
-            value: SharedPointer::new(value),
-        }
-    }
-}
+// impl<K, V, P: SharedPointerKind> KeyValuePair<K, V, P> {
+//     fn new(key: K, value: V) -> KeyValuePair<K, V, P> {
+//         KeyValuePair {
+//             key: SharedPointer::new(key),
+//             value: SharedPointer::new(value),
+//         }
+//     }
+// }
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum VT {
@@ -41,18 +41,30 @@ pub enum VT {
 //pub struct MemtableResource(RwLock<HashMap<String, ValTomb>>);
 
 lazy_static::lazy_static! {
-    static ref CURRENT: RwLock<RedBlackTreeMapSync< String, String>> = RwLock::new(RedBlackTreeMap::new_sync());
+    static ref CURRENT: RwLock<RedBlackTreeMapSync< String, VT>> = RwLock::new(RedBlackTreeMap::new_sync());
 }
-/*fn tryit() {
-    let rbts = RwLock::new(RedBlackTreeMap::new_sync());
-}*/
+
+impl From<&VT> for ValTomb {
+    fn from(vt: &VT) -> Self {
+        match *vt {
+            VT::Tombstone => ValTomb {
+                kind: atoms::tombstone(),
+                val_tomb: "".to_string(),
+            },
+            VT::Value(v) => ValTomb {
+                kind: atoms::value(),
+                val_tomb: v.to_string(),
+            },
+        }
+    }
+}
 
 #[rustler::nif]
 pub fn update(key: &str, value: &str) -> Atom {
     CURRENT
         .write()
         .unwrap()
-        .insert(key.to_string(), value.to_string());
+        .insert(key.to_string(), VT::Value(value.to_string()));
 
     atoms::ok()
 }
@@ -62,7 +74,7 @@ pub fn delete(key: &str) -> Atom {
     CURRENT
         .write()
         .unwrap()
-        .insert(key.to_string(), "TOMBSTONE".to_string());
+        .insert(key.to_string(), VT::Tombstone);
 
     atoms::ok()
 }
@@ -73,7 +85,7 @@ pub fn query(key: &str) -> ValTomb {
         .read()
         .unwrap()
         .get(key)
-        .map(|r| r.clone())
+        .map(|r| ValTomb::from(r))
         .unwrap_or(ValTomb {
             kind: atoms::none(),
             val_tomb: "".to_string(),
