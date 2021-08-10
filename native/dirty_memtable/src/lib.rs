@@ -131,6 +131,6 @@ fn load(_: rustler::Env, _: rustler::Term) -> bool {
 
 rustler::init!(
     "Elixir.Memtable.Dirty",
-    [query, update, delete, prepare_flush, finalize_flush],
+    [query, update, delete, prepare_flush, finalize_flush, clear],
     load = load
 );
