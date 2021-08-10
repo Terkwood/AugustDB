@@ -21,8 +21,6 @@ defmodule AugustDb.Application do
       {Task, fn -> Startup.init() end},
       # Start periodic SSTable compaction
       SSTable.Compaction.Periodic,
-      # Start the memory monitor (prints to :stdout)
-      MemoryMonitor,
       # Start the Telemetry supervisor
       AugustDbWeb.Telemetry,
       # Start the PubSub system
