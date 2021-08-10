@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.4.4](https://github.com/Terkwood/AugustDB/compare/v0.4.3...v0.4.4) (2021-08-10)
+
+
+### Features
+
+* parse simple JSON strings in PUT route ([#94](https://github.com/Terkwood/AugustDB/issues/94)) ([8fb6ba4](https://github.com/Terkwood/AugustDB/commit/8fb6ba4861203a4c20c7554980488dfb7df85788))
+
+
+### Bug Fixes
+
+* one memtable flush at a time ([#101](https://github.com/Terkwood/AugustDB/issues/101)) ([b1b06a0](https://github.com/Terkwood/AugustDB/commit/b1b06a0900ca30a42f91961977af44c2dd40a496))
+
 ### [0.4.3](https://github.com/Terkwood/AugustDB/compare/v0.4.2...v0.4.3) (2021-08-08)
 
 
