@@ -89,9 +89,9 @@ defmodule SSTable do
 
   Accepts a memtable resource as defined in Memtable.Dirty
   """
-  def dump(memtable_resource) do
+  def dump(memtable_list) do
     maybe_kvs =
-      for entry <- Memtable.Dirty.to_list(memtable_resource) do
+      for entry <- memtable_list do
         case entry do
           {key, {:value, value}} -> {key, value}
           {key, :tombstone} -> {key, :tombstone}

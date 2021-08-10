@@ -1,5 +1,5 @@
 mod atoms {
-    rustler::atoms! { value, tombstone, none, ok }
+    rustler::atoms! { value, tombstone, none, ok, proceed, stop }
 }
 
 use rpds::map::red_black_tree_map::{RedBlackTreeMap, RedBlackTreeMapSync};
@@ -37,6 +37,12 @@ impl From<&VT> for ValTomb {
     }
 }
 
+#[derive(NifTuple)]
+pub struct PrepareFlushStatus {
+    pub status: Atom,
+    pub flushing: Vec<ValTomb>,
+}
+
 #[rustler::nif]
 pub fn update(key: &str, value: &str) -> Atom {
     let mut guard = CURRENT.lock().unwrap();
@@ -69,9 +75,20 @@ pub fn query(key: &str) -> ValTomb {
         })
 }
 
+/// Move the current memtable into the flushing
+/// memtable data structure, and then empty the
+/// current memtable.  Returns a list of k/v tuples
+/// which need to be flushed to disk.
 #[rustler::nif]
-pub fn to_list() -> Vec<ValTomb> {
-    todo!()
+pub fn prepare_flush() -> PrepareFlushStatus {
+    if false {
+        PrepareFlushStatus {
+            status: atoms::stop(),
+            flushing: vec![],
+        }
+    } else {
+        todo!("write me")
+    }
 }
 
 fn load(_: rustler::Env, _: rustler::Term) -> bool {
@@ -80,6 +97,6 @@ fn load(_: rustler::Env, _: rustler::Term) -> bool {
 
 rustler::init!(
     "Elixir.Memtable.Dirty",
-    [query, update, delete, to_list],
+    [query, update, delete, prepare_flush],
     load = load
 );

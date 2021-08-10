@@ -30,40 +30,54 @@ defmodule Memtable do
   end
 
   def flush() do
+    flushing = Memtable.Dirty.prepare_flush()
     nil
   end
 
   def real_flush() do
-    # flushing = Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: _} -> current end)
+    # flushing =
+    #   Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: pend} ->
+    #     unless :gb_trees.is_empty(pend) do
+    #       {:proceed, current}
+    #     else
+    #       :stop
+    #     end
+    #   end)
 
-    # # Forget about whatever we were flushing before,
-    # # and move the current memtable into the flushing state.
-    # # Then clear the current memtable.
-    # Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
-    #   %__MODULE__{
-    #     current: Memtable.Dirty.new(),
-    #     flushing: current
-    #   }
-    # end)
+    # case flushing do
+    #   # flush is pending, don't start multiple
+    #   {:stop, _} ->
+    #     nil
 
-    # # Start a new commit log
-    # CommitLog.new()
+    #   {:proceed, old_tree} ->
+    #     # Forget about whatever we were flushing before,
+    #     # and move the current memtable into the flushing state.
+    #     # Then clear the current memtable.
+    #     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
+    #       %__MODULE__{
+    #         current: :gb_trees.empty(),
+    #         flushing: current
+    #       }
+    #     end)
 
-    # # Write the current memtable to disk in a binary format
-    # {flushed_sst_path, sparse_index} = SSTable.dump(flushing)
-    # # ⚡ Keep a copy of the index in memory ⚡
-    # SSTable.Index.remember(flushed_sst_path, sparse_index)
+    #     # Start a new commit log
+    #     CommitLog.new()
 
-    # # Create a cuckoo filter in memory for this table
-    # CuckooFilter.remember(flushed_sst_path, Memtable.Dirty.keys(flushing))
+    #     # Write the current memtable to disk in a binary format
+    #     {flushed_sst_path, sparse_index} = SSTable.dump(old_tree)
+    #     # ⚡ Keep a copy of the index in memory ⚡
+    #     SSTable.Index.remember(flushed_sst_path, sparse_index)
 
-    # # Finished.  Clear the flushing table state.
-    # Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
-    #   %__MODULE__{
-    #     current: current,
-    #     flushing: :gb_trees.empty()
-    #   }
-    # end)
+    #     # Create a cuckoo filter in memory for this table
+    #     CuckooFilter.remember(flushed_sst_path, :gb_trees.keys(old_tree))
+
+    #     # Finished.  Clear the flushing table state.
+    #     Agent.update(__MODULE__, fn %__MODULE__{current: current, flushing: _} ->
+    #       %__MODULE__{
+    #         current: current,
+    #         flushing: :gb_trees.empty()
+    #       }
+    #     end)
   end
 
   @doc """
