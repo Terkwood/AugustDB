@@ -5,18 +5,16 @@ mod atoms {
 
 use rbtree::RBTree;
 use rustler::{Atom, Env, NifTuple, ResourceArc};
-use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::RwLock;
 
-#[derive(NifTuple, Clone)]
+#[derive(NifTuple, Clone, Debug)]
 pub struct ValTomb {
     kind: Atom,
     val_tomb: String,
 }
 
 lazy_static::lazy_static! {
-    static ref CURRENT: RwLock<HashMap<String,ValTomb>> = RwLock::new(HashMap::new());
+    static ref CURRENT: RwLock<RBTree<String,ValTomb>> = RwLock::new(RBTree::default());
 }
 
 #[rustler::nif]
@@ -50,7 +48,7 @@ pub fn query(key: &str) -> ValTomb {
     CURRENT
         .read()
         .unwrap()
-        .get(key)
+        .get(&key.to_string())
         .map(|r| r.clone())
         .unwrap_or(ValTomb {
             kind: atoms::none(),
@@ -70,7 +68,7 @@ pub fn keys() -> Vec<String> {
 
 // you can expose this as a resource
 //pub struct MemtableResource(RwLock<HashMap<String, ValTomb>>);
-pub fn on_load(env: Env) -> bool {
+pub fn on_load(_env: Env) -> bool {
     //rustler::resource!(MemtableResource, env);
     true
 }
