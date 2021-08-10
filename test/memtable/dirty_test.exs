@@ -2,28 +2,25 @@ defmodule DirtyMemtableTest do
   use ExUnit.Case, async: true
 
   test "dirty memtable stub" do
-    resource = Memtable.Dirty.new()
-    Memtable.Dirty.update(resource, "foo", "bar")
-    assert Memtable.Dirty.query(resource, "foo") == {:value, "bar"}
+    Memtable.Dirty.update("foo", "bar")
+    assert Memtable.Dirty.query("foo") == {:value, "bar"}
 
     assert Task.await(
              Task.async(fn ->
-               Memtable.Dirty.update(resource, "foo", "qux")
-               Memtable.Dirty.query(resource, "foo")
+               Memtable.Dirty.update("foo", "qux")
+               Memtable.Dirty.query("foo")
              end)
            ) == {:value, "qux"}
 
-    assert Memtable.Dirty.query(resource, "foo") == {:value, "qux"}
+    assert Memtable.Dirty.query("foo") == {:value, "qux"}
   end
 
   test "delete creates tombstone" do
-    resource = Memtable.Dirty.new()
-    Memtable.Dirty.delete(resource, "foo")
-    assert Memtable.Dirty.query(resource, "foo") == {:tombstone, ""}
+    Memtable.Dirty.delete("foo")
+    assert Memtable.Dirty.query("foo") == {:tombstone, ""}
   end
 
   test "query non-existent" do
-    resource = Memtable.Dirty.new()
-    assert Memtable.Dirty.query(resource, "nothing") == {:none, ""}
+    assert Memtable.Dirty.query("nothing") == {:none, ""}
   end
 end

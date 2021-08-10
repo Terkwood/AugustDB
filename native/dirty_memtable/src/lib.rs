@@ -14,28 +14,19 @@ pub struct ValTomb {
 mod atoms {
     rustler::atoms! { value, tombstone, none, ok }
 }
-pub struct MemtableResource {
-    current: RwLock<HashMap<String, ValTomb>>,
-    _flushing: RwLock<HashMap<String, ValTomb>>,
-}
-
+pub struct MemtableResource(RwLock<HashMap<String, ValTomb>>);
 pub fn on_load(env: Env) -> bool {
     rustler::resource!(MemtableResource, env);
     true
 }
 
-#[rustler::nif]
-pub fn new() -> ResourceArc<MemtableResource> {
-    ResourceArc::new(MemtableResource {
-        current: RwLock::new(HashMap::new()),
-        _flushing: RwLock::new(HashMap::new()),
-    })
+lazy_static::lazy_static! {
+    static ref CURRENT: RwLock<HashMap<String,ValTomb>> = RwLock::new(HashMap::new());
 }
 
 #[rustler::nif]
-pub fn update(resource: ResourceArc<MemtableResource>, key: &str, value: &str) -> Atom {
-    let mut current = resource.current.write().unwrap();
-    current.insert(
+pub fn update(key: &str, value: &str) -> Atom {
+    CURRENT.write().unwrap().insert(
         key.to_string(),
         ValTomb {
             kind: atoms::value(),
@@ -47,9 +38,8 @@ pub fn update(resource: ResourceArc<MemtableResource>, key: &str, value: &str) -
 }
 
 #[rustler::nif]
-pub fn delete(resource: ResourceArc<MemtableResource>, key: &str) -> Atom {
-    let mut current = resource.current.write().unwrap();
-    current.insert(
+pub fn delete(key: &str) -> Atom {
+    CURRENT.write().unwrap().insert(
         key.to_string(),
         ValTomb {
             kind: atoms::tombstone(),
@@ -61,9 +51,8 @@ pub fn delete(resource: ResourceArc<MemtableResource>, key: &str) -> Atom {
 }
 
 #[rustler::nif]
-pub fn query(resource: ResourceArc<MemtableResource>, key: &str) -> ValTomb {
-    resource
-        .current
+pub fn query(key: &str) -> ValTomb {
+    CURRENT
         .read()
         .unwrap()
         .get(key)
@@ -90,6 +79,6 @@ fn load(env: rustler::Env, _: rustler::Term) -> bool {
 }
 rustler::init!(
     "Elixir.Memtable.Dirty",
-    [new, query, update, delete, to_list, keys],
+    [query, update, delete],
     load = load
 );
