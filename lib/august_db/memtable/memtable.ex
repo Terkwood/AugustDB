@@ -52,22 +52,6 @@ defmodule Memtable do
     end
   end
 
-  def real_flush() do
-    # flushing =
-    #   Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: pend} ->
-    #     unless :gb_trees.is_empty(pend) do
-    #       {:proceed, current}
-    #     else
-    #       :stop
-    #     end
-    #   end)
-
-    # case flushing do
-    #   # flush is pending, don't start multiple
-    #   {:stop, _} ->
-    #     nil
-  end
-
   @doc """
   Called by `CommitLog.replay()`
   """
