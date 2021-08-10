@@ -63,7 +63,7 @@ defmodule SSTable do
   ### Combined with Memtable
 
   ```elixir
-  Memtable.update("bar","BAZ"); Memtable.delete("foo"); Memtable.flush()
+  Memtable.Ref.update("bar","BAZ"); Memtable.Ref.delete("foo"); Memtable.Ref.flush()
   :ok
   SSTable.query("bar")
   "BAZ"
@@ -87,19 +87,14 @@ defmodule SSTable do
   Write a list of key/value pairs to binary SSTable file (<timestamp>.sst)
   Also write a sparse index of offsets (<timestamp>.idx)
 
-  ## Example
-
-  ```elixir
-  tree = :gb_trees.enter("k3","uuu",:gb_trees.enter("k2","ww",:gb_trees.enter("k1","v",:gb_trees.empty())))
-  SSTable.dump(tree)
-  ```
+  Accepts a memtable resource as defined in Memtable.Dirty
   """
-  def dump(gb_tree) do
+  def dump(memtable_resource) do
     maybe_kvs =
-      for entry <- :gb_trees.to_list(gb_tree) do
+      for entry <- Memtable.Dirty.to_list(memtable_resource) do
         case entry do
-          {key, {:value, value, _time}} -> {key, value}
-          {key, {:tombstone, _time}} -> {key, :tombstone}
+          {key, {:value, value}} -> {key, value}
+          {key, :tombstone} -> {key, :tombstone}
           _ -> nil
         end
       end
