@@ -45,7 +45,7 @@ defmodule Memtable do
         SSTable.Index.remember(flushed_sst_path, sparse_index)
 
         # Create a cuckoo filter in memory for this table
-        CuckooFilter.remember(flushed_sst_path, :gb_trees.keys(old_tree))
+        CuckooFilter.remember(flushed_sst_path, old_tree |> Enum.map(fn {k, _} -> k end))
 
         # Finished.  Clear the flushing table state.
         Memtable.Dirty.finalize_flush()
@@ -56,13 +56,7 @@ defmodule Memtable do
   Called by `CommitLog.replay()`
   """
   def clear() do
-    # TODO
-    # Agent.update(__MODULE__, fn %__MODULE__{current: _, flushing: _} ->
-    #   %__MODULE__{
-    #     current: :gb_trees.empty(),
-    #     flushing: :gb_trees.empty()
-    #   }
-    # end)
+    Memtable.Dirty.clear()
   end
 end
 

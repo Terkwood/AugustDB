@@ -19,7 +19,6 @@ pub enum VT {
 
 lazy_static::lazy_static! {
     static ref CURRENT: Mutex<RedBlackTreeMapSync<String, VT>> = Mutex::new(RedBlackTreeMap::new_sync());
-
     static ref FLUSHING: Mutex<RedBlackTreeMapSync<String, VT>> = Mutex::new(RedBlackTreeMap::new_sync());
 
 }
@@ -109,6 +108,14 @@ fn to_kvs(_tree: &RedBlackTreeMapSync<String, VT>) -> Vec<ValTomb> {
 #[rustler::nif]
 pub fn finalize_flush() {
     todo!()
+}
+
+#[rustler::nif]
+pub fn clear() {
+    let mut c = CURRENT.lock().unwrap();
+    let mut f = FLUSHING.lock().unwrap();
+    *c = RedBlackTreeMap::new_sync();
+    *f = RedBlackTreeMap::new_sync();
 }
 
 fn load(_: rustler::Env, _: rustler::Term) -> bool {
