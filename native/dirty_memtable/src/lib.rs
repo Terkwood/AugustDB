@@ -86,7 +86,7 @@ pub fn query(key: &str) -> ValTomb {
 #[rustler::nif]
 pub fn prepare_flush() -> PrepareFlushStatus {
     let mut flushing = FLUSHING.lock().unwrap();
-    if flushing.is_empty() {
+    if !flushing.is_empty() {
         PrepareFlushStatus {
             status: atoms::stop(),
             flushing: vec![],

@@ -33,9 +33,11 @@ defmodule Memtable do
     case Memtable.Dirty.prepare_flush() do
       # flush is pending -- do nothing
       {:stop, _} ->
+        IO.puts("no")
         nil
 
       {:proceed, old_tree} ->
+        IO.puts("yes")
         # Start a new commit log
         CommitLog.new()
 
