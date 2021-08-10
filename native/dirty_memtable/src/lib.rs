@@ -1,7 +1,6 @@
 mod atoms {
     rustler::atoms! { value, tombstone, none, ok, proceed, stop }
 }
-
 use rpds::map::red_black_tree_map::{RedBlackTreeMap, RedBlackTreeMapSync};
 use rustler::{Atom, NifTuple};
 use std::sync::Mutex;
@@ -20,7 +19,9 @@ pub enum VT {
 
 lazy_static::lazy_static! {
     static ref CURRENT: Mutex<RedBlackTreeMapSync<String, VT>> = Mutex::new(RedBlackTreeMap::new_sync());
+
     static ref FLUSHING: Mutex<RedBlackTreeMapSync<String, VT>> = Mutex::new(RedBlackTreeMap::new_sync());
+
 }
 
 impl From<&VT> for ValTomb {

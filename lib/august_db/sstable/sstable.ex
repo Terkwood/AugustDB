@@ -89,6 +89,7 @@ defmodule SSTable do
 
   Accepts a memtable resource as defined in Memtable.Dirty
   """
+
   def dump(memtable_list) do
     maybe_kvs =
       for entry <- memtable_list do
