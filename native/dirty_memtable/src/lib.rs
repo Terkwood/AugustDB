@@ -11,6 +11,9 @@ pub struct ValTomb {
     value: String,
 }
 
+#[derive(NifTuple)]
+pub struct KV(String, ValTomb);
+
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum VT {
     Value(String),
@@ -41,7 +44,7 @@ impl From<&VT> for ValTomb {
 #[derive(NifTuple)]
 pub struct PrepareFlushStatus {
     pub status: Atom,
-    pub flushing: Vec<ValTomb>,
+    pub flushing: Vec<KV>,
 }
 
 #[rustler::nif]
@@ -101,8 +104,12 @@ pub fn prepare_flush() -> PrepareFlushStatus {
     }
 }
 
-fn to_kvs(_tree: &RedBlackTreeMapSync<String, VT>) -> Vec<ValTomb> {
-    todo!()
+fn to_kvs(tree: &RedBlackTreeMapSync<String, VT>) -> Vec<KV> {
+    let mut out = vec![];
+    for (key, vt) in tree.iter() {
+        out.push(KV(key.clone(), ValTomb::from(vt)))
+    }
+    out
 }
 
 #[rustler::nif]
