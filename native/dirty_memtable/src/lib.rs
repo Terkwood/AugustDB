@@ -114,7 +114,8 @@ fn to_kvs(tree: &RedBlackTreeMapSync<String, VT>) -> Vec<KV> {
 
 #[rustler::nif]
 pub fn finalize_flush() {
-    todo!()
+    let mut f = FLUSHING.lock().unwrap();
+    *f = RedBlackTreeMap::new_sync()
 }
 
 #[rustler::nif]
