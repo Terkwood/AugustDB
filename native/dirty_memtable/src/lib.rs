@@ -2,12 +2,9 @@ mod atoms {
     rustler::atoms! { value, tombstone, none, ok }
 }
 
-use rpds::map::red_black_tree_map::RedBlackTreeMap;
-use rpds::{RedBlackTreeMapSync, RedBlackTreeSetSync};
-use rustler::{Atom, Env, NifTuple, ResourceArc};
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex, RwLock};
+use rpds::map::red_black_tree_map::{RedBlackTreeMap, RedBlackTreeMapSync};
+use rustler::{Atom, NifTuple};
+use std::sync::Mutex;
 
 #[derive(NifTuple, Clone)]
 pub struct ValTomb {
@@ -15,30 +12,11 @@ pub struct ValTomb {
     val_tomb: String,
 }
 
-// use archery::*;
-
-// #[derive(PartialEq, Eq, PartialOrd, Ord)]
-// struct KeyValuePair<K, V, P: SharedPointerKind> {
-//     pub key: SharedPointer<K, P>,
-//     pub value: SharedPointer<V, P>,
-// }
-
-// impl<K, V, P: SharedPointerKind> KeyValuePair<K, V, P> {
-//     fn new(key: K, value: V) -> KeyValuePair<K, V, P> {
-//         KeyValuePair {
-//             key: SharedPointer::new(key),
-//             value: SharedPointer::new(value),
-//         }
-//     }
-// }
-
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum VT {
     Value(String),
     Tombstone,
 }
-
-//pub struct MemtableResource(RwLock<HashMap<String, ValTomb>>);
 
 lazy_static::lazy_static! {
     static ref CURRENT: Mutex<RedBlackTreeMapSync<String, VT>> = Mutex::new(RedBlackTreeMap::new_sync());
@@ -93,25 +71,15 @@ pub fn query(key: &str) -> ValTomb {
 
 #[rustler::nif]
 pub fn to_list() -> Vec<ValTomb> {
-    vec![]
+    todo!()
 }
 
-#[rustler::nif]
-pub fn keys() -> Vec<String> {
-    vec![]
-}
-
-pub fn on_load(env: Env) -> bool {
-    //rustler::resource!(MemtableResource, env);
-    true
-}
-fn load(env: rustler::Env, _: rustler::Term) -> bool {
-    on_load(env);
+fn load(_: rustler::Env, _: rustler::Term) -> bool {
     true
 }
 
 rustler::init!(
     "Elixir.Memtable.Dirty",
-    [query, update, delete, keys, to_list],
+    [query, update, delete, to_list],
     load = load
 );
