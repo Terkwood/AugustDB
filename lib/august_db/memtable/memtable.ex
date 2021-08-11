@@ -52,19 +52,26 @@ defmodule Memtable do
   end
 
   def flush() do
+    IO.puts("flush")
     flushing =
       Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: pend} ->
-        if :gb_trees.is_empty(pend) and !:gb_trees.is_empty(current) do
-          {:proceed, current}
-        else
-          :stop
+        flushing_tree_empty = :gb_trees.is_empty(pend)
+        current_tree_empty = :gb_trees.is_empty(current)
+        case {flushing_tree_empty, current_tree_empty} do
+          {true, false} -> {:proceed, current}
+          {true, true} -> :empty
+          _ -> :stop
         end
       end)
 
     case flushing do
       # flush is pending, don't start multiple
       :stop ->
-        nil
+        IO.puts("stop flush")
+        :stop
+      :empty ->
+        IO.puts("nothing in memory")
+        :empty
 
       {:proceed, old_tree} ->
         # Forget about whatever we were flushing before,
@@ -97,6 +104,7 @@ defmodule Memtable do
         end)
 
         CommitLog.delete(old_path)
+        :ok
     end
   end
 end
