@@ -82,9 +82,9 @@ defmodule CommitLog do
   Replay all commit log values into the memtable.
   """
   def replay() do
-    IO.inspect(Path.wildcard("commit-*.log") |>
+    Path.wildcard("commit-*.log") |>
       Enum.filter(&GenServer.call(CommitLogDevice, {:can_delete?, &1})) |>
-      Enum.map(&replay_one(&1))) |>
+      Enum.map(&replay_one(&1)) |>
       Enum.each(fn inactive_path -> case Memtable.flush() do
           :ok ->
             # memtable flush already deleted it
