@@ -53,8 +53,8 @@ defmodule Memtable do
 
   def flush() do
     flushing =
-      Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: pend} ->
-        if :gb_trees.is_empty(pend) && !:gb_trees.is_empty(current) do
+      Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: flushing} ->
+        if :gb_trees.is_empty(flushing) && !:gb_trees.is_empty(current) do
           {:proceed, current}
         else
           :stop
