@@ -19,19 +19,23 @@ defmodule CommitLog do
   def init(nil) do
     path = new_path()
     {:ok, device} = :file.open(path, [:append])
-    IO.puts("init commit log #{path}")
     {:ok, {device, path, nil}}
   end
 
   def handle_call({:can_delete?, inactive_path}, _from, {device, current_path, replay_path}) do
-    {:reply, inactive_path != current_path && inactive_path != replay_path, {device, current_path, replay_path}}
+    answer = !(inactive_path == current_path || inactive_path == replay_path)
+    {:reply, answer, {device, current_path, replay_path}}
   end
 
   def handle_call(:swap, _from, {last_device, last_path, replay}) do
-    :ok = :file.close(last_device)
-    next_path = new_path()
-    {:ok, next_device} = :file.open(next_path, [:append, :raw])
-    {:reply, {:last_path, last_path}, {next_device, next_path, replay}}
+    unless replay != nil do
+      :ok = :file.close(last_device)
+      next_path = new_path()
+      {:ok, next_device} = :file.open(next_path, [:append, :raw])
+      {:reply, {:last_path, last_path}, {next_device, next_path, replay}}
+    else
+      {:reply, {:last_path, last_path}, {last_device, last_path, replay}}
+    end
   end
 
   def handle_cast({:begin_replay, path}, {device, write_path, _}) do
@@ -83,17 +87,12 @@ defmodule CommitLog do
   """
   def replay() do
     Path.wildcard("commit-*.log") |>
+      Enum.sort() |>
       Enum.filter(&GenServer.call(CommitLogDevice, {:can_delete?, &1})) |>
       Enum.map(&replay_one(&1)) |>
-      Enum.each(fn inactive_path -> case Memtable.flush() do
-          :ok ->
-            # memtable flush already deleted it
-            nil
-          :empty ->
-            # make sure we clean these up
-            CommitLog.delete(inactive_path)
-          :stop -> nil
-        end
+      Enum.each(fn inactive_path ->
+        Memtable.flush()
+        CommitLog.delete(inactive_path)
       end)
   end
 
@@ -146,7 +145,6 @@ defmodule CommitLog do
     end)
     |> Stream.run()
 
-    IO.puts("end replay")
     GenServer.cast(CommitLogDevice, :end_replay)
     log_file
   end

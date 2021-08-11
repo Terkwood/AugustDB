@@ -52,26 +52,19 @@ defmodule Memtable do
   end
 
   def flush() do
-    IO.puts("flush")
     flushing =
       Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: pend} ->
-        flushing_tree_empty = :gb_trees.is_empty(pend)
-        current_tree_empty = :gb_trees.is_empty(current)
-        case {flushing_tree_empty, current_tree_empty} do
-          {true, false} -> {:proceed, current}
-          {true, true} -> :empty
-          _ -> :stop
+        if :gb_trees.is_empty(pend) && !:gb_trees.is_empty(current) do
+          {:proceed, current}
+        else
+          :stop
         end
       end)
 
     case flushing do
       # flush is pending, don't start multiple
       :stop ->
-        IO.puts("stop flush")
         :stop
-      :empty ->
-        IO.puts("nothing in memory")
-        :empty
 
       {:proceed, old_tree} ->
         # Forget about whatever we were flushing before,
@@ -86,6 +79,7 @@ defmodule Memtable do
 
         # Start a new commit log.  Remember the name of the old
         # one so that we can clean it up after the flush is complete.
+        # This will be skipped automatically if we're in replay mode.
         {:last_path, last_commit_log_path} = CommitLog.swap()
 
         # Write the current memtable to disk in a binary format
@@ -104,6 +98,7 @@ defmodule Memtable do
           }
         end)
 
+        IO.puts("MT FLUSH DEL " <> last_commit_log_path)
         CommitLog.delete(last_commit_log_path)
         :ok
     end

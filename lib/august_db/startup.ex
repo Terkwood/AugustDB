@@ -14,6 +14,7 @@ defmodule Startup do
   """
   def init do
     CommitLog.replay()
+    Memtable.flush()
     SSTable.Index.load_all()
   end
 end
