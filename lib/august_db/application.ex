@@ -7,7 +7,7 @@ defmodule AugustDb.Application do
 
   def start(_type, _args) do
     children = [
-      # Start the CommitLog device genserver
+      # Start the CommitLog device & filename genserver
       CommitLog,
       # Start the Memtable agent
       {Memtable, %Memtable{}},

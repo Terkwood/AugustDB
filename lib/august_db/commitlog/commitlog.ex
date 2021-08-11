@@ -2,6 +2,10 @@ NimbleCSV.define(CommitLogParser, separator: TSV.col_separator(), escape: "\"")
 
 defmodule CommitLog do
   use GenServer
+  @moduledoc """
+  Server tracks the device associated with a commit log file,
+  as well as the filename to which we're writing.
+  """
 
   @tsv_header_string "k\tv\tt\tc\n"
   @tombstone_string Tombstone.string()
