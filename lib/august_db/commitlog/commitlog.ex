@@ -111,7 +111,7 @@ defmodule CommitLog do
     # we want to make sure we don't accidentally delete
     # the file after memtable flush
     GenServer.cast(CommitLogDevice, {:begin_replay, log_file})
-    IO.puts("replay commit log #{log_file}")
+    IO.puts("Replaying #{log_file}")
     # we need the header line so that NimbleCSV doesn't fail
     hdr = Stream.cycle([@tsv_header_string]) |> Stream.take(1)
 
