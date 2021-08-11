@@ -5,6 +5,18 @@ defmodule CommitLog do
   @moduledoc """
   Server tracks the device associated with a commit log file,
   as well as the filename to which we're writing.
+
+  ## Caveats
+
+  There's some annoying state management that has to be taken care of
+  to support the replay functionality: individual replays must be
+  announced to the CommitLog genserver with a
+  `{:begin_replay, some_commitlog_path}` message.
+
+  Then when the replay is complete, it must be announced via
+  `:end_replay`. This will prevent accidental deletions of commit
+  logs which are being read, in case the log is huge and
+  memtable flushes while it's being processed.
   """
 
   import CommitLog.Path
@@ -27,6 +39,11 @@ defmodule CommitLog do
     {:reply, answer, {device, current_path, replay_path}}
   end
 
+  @doc """
+  We don't want to honor this call to swap the commit log
+  during a replay event, because that would delete the file
+  that we're reading from!
+  """
   def handle_call(:swap, _from, {last_device, last_path, replay}) do
     case replay do
       nil ->
