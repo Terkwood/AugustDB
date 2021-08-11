@@ -100,8 +100,8 @@ defmodule CommitLog do
   def delete(inactive_path) do
     # Just to be on the safe side, make sure we aren't
     # currently writing to the file we want to delete.
-    if GenServer.call(CommitLogDevice, {:can_delete?, inactive_path})  do
-      :ok = :file.delete(inactive_path)
+    if GenServer.call(CommitLogDevice, {:can_delete?, inactive_path}) do
+      File.rm!(inactive_path)
     else
       IO.puts(:stderr, "Skipping delete of commit log: #{inactive_path}")
     end
