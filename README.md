@@ -103,6 +103,12 @@ One can imagine a simple, uncompressed binary representation of keys to values:
 In practice you won't ever see this sequence on disk, because the records
 will be gzipped.
 
+## Managing Commit Log Files
+
+On app startup, all outstanding commit logs are replayed and flushed from memtable to SSTable, then deleted. During the course of normal operation, a new commit log is created every time the memtable is flushed, and new writes are routed to that file. The old commit log can be removed right away.
+
+[Read the design ticket for more information](https://github.com/Terkwood/AugustDB/issues/107).
+
 ## Inspiration
 
 [Kleppmann: Designing Data-Intensive Applications](https://dataintensive.net/) gives a fantastic summary of local-node operation for data stores using SSTable, followed by detail on strategies for replication and partitioning. Check it out!
