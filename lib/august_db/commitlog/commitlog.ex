@@ -11,7 +11,6 @@ defmodule CommitLog do
 
   @tsv_header_string "k\tv\tt\tc\n"
   @tombstone_string Tombstone.string()
-  @log_file "commit.log"
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, nil, name: CommitLogDevice)
