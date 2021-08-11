@@ -28,13 +28,14 @@ defmodule CommitLog do
   end
 
   def handle_call(:swap, _from, {last_device, last_path, replay}) do
-    unless replay != nil do
-      :ok = :file.close(last_device)
-      next_path = new_path()
-      {:ok, next_device} = :file.open(next_path, [:append, :raw])
-      {:reply, {:last_path, last_path}, {next_device, next_path, replay}}
-    else
-      {:reply, {:last_path, last_path}, {last_device, last_path, replay}}
+    case replay do
+      nil ->
+        :ok = :file.close(last_device)
+        next_path = new_path()
+        {:ok, next_device} = :file.open(next_path, [:append, :raw])
+        {:reply, {:last_path, last_path}, {next_device, next_path, replay}}
+      _ ->
+        {:reply, {:last_path, last_path}, {last_device, last_path, replay}}
     end
   end
 
