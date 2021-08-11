@@ -4,7 +4,7 @@ defmodule CommitLog.Path do
   Since these files may persist across restarts of the
   application, we use system time instead of monotonic time.
   """
-  def new() do
+  def new_path() do
     "commit-#{:erlang.system_time()}.log"
   end
 end

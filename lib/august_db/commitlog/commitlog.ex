@@ -7,6 +7,8 @@ defmodule CommitLog do
   as well as the filename to which we're writing.
   """
 
+  import CommitLog.Path
+
   @tsv_header_string "k\tv\tt\tc\n"
   @tombstone_string Tombstone.string()
   @log_file "commit.log"
@@ -16,24 +18,23 @@ defmodule CommitLog do
   end
 
   def init(nil) do
-    {:ok, device_out} = :file.open(@log_file, [:append])
-    {:ok, device_out}
+    path = new_path()
+    {:ok, device} = :file.open(path, [:append])
+    {:ok, {device, path}}
   end
 
-  def handle_cast(:new, old_device_out) do
-    :ok = :file.close(old_device_out)
-    :ok = :file.delete(@log_file)
-    {:ok, new_device_out} = :file.open(@log_file, [:append, :raw])
-    {:noreply, new_device_out}
+  def handle_cast(:new, {last_device, last_path}) do
+    :ok = :file.close(last_device)
+    :ok = :file.delete(last_path)
+    next_path = new_path()
+    {:ok, next_device} = :file.open(next_path, [:append, :raw])
+    {:noreply, {next_device, next_path}}
   end
 
-  def handle_cast(:close, device_out) do
-    {:noreply, device_out}
-  end
 
-  def handle_cast({:append, payload}, device_out) do
-    :file.write(device_out, payload)
-    {:noreply, device_out}
+  def handle_cast({:append, payload}, {device, path}) do
+    :file.write(device, payload)
+    {:noreply, {device, path}}
   end
 
   def append(key, :tombstone) do
@@ -63,6 +64,7 @@ defmodule CommitLog do
   Replay all commit log values into the memtable.
   """
   def replay() do
+    raise "TODO: rework me"
     # we need the header line so that NimbleCSV doesn't fail
     hdr = Stream.cycle([@tsv_header_string]) |> Stream.take(1)
     log = File.stream!(@log_file, read_ahead: 100_000)
