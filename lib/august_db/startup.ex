@@ -13,7 +13,6 @@ defmodule Startup do
     4. Load all sparse SSTable indices into main memory.
   """
   def init do
-    CommitLog.touch()
     CommitLog.replay()
     Memtable.flush()
     SSTable.Index.load_all()

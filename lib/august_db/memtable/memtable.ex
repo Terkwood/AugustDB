@@ -53,8 +53,8 @@ defmodule Memtable do
 
   def flush() do
     flushing =
-      Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: pend} ->
-        if :gb_trees.is_empty(pend) and !:gb_trees.is_empty(current) do
+      Agent.get(__MODULE__, fn %__MODULE__{current: current, flushing: flushing} ->
+        if :gb_trees.is_empty(flushing) && !:gb_trees.is_empty(current) do
           {:proceed, current}
         else
           :stop
@@ -64,7 +64,7 @@ defmodule Memtable do
     case flushing do
       # flush is pending, don't start multiple
       :stop ->
-        nil
+        :stop
 
       {:proceed, old_tree} ->
         # Forget about whatever we were flushing before,
@@ -77,8 +77,10 @@ defmodule Memtable do
           }
         end)
 
-        # Start a new commit log
-        CommitLog.new()
+        # Start a new commit log.  Remember the name of the old
+        # one so that we can clean it up after the flush is complete.
+        # This will be skipped automatically if we're in replay mode.
+        {:last_path, last_commit_log_path} = CommitLog.swap()
 
         # Write the current memtable to disk in a binary format
         {flushed_sst_path, sparse_index} = SSTable.dump(old_tree)
@@ -95,18 +97,9 @@ defmodule Memtable do
             flushing: :gb_trees.empty()
           }
         end)
-    end
-  end
 
-  @doc """
-  Called by `CommitLog.replay()`
-  """
-  def clear() do
-    Agent.update(__MODULE__, fn %__MODULE__{current: _, flushing: _} ->
-      %__MODULE__{
-        current: :gb_trees.empty(),
-        flushing: :gb_trees.empty()
-      }
-    end)
+        CommitLog.delete(last_commit_log_path)
+        :ok
+    end
   end
 end
