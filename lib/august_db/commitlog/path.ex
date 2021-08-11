@@ -7,4 +7,8 @@ defmodule CommitLog.Path do
   def new_path() do
     "commit-#{:erlang.system_time()}.log"
   end
+
+  def extract_time(path) do
+    String.split(path, ".log") |> hd |> String.split("commit-") |> tl
+  end
 end

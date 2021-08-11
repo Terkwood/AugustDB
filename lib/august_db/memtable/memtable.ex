@@ -84,8 +84,9 @@ defmodule Memtable do
           }
         end)
 
-        # Start a new commit log.
-        {:old_path, old_path} = CommitLog.swap()
+        # Start a new commit log.  Remember the name of the old
+        # one so that we can clean it up after the flush is complete.
+        {:last_path, last_commit_log_path} = CommitLog.swap()
 
         # Write the current memtable to disk in a binary format
         {flushed_sst_path, sparse_index} = SSTable.dump(old_tree)
@@ -103,7 +104,7 @@ defmodule Memtable do
           }
         end)
 
-        CommitLog.delete(old_path)
+        CommitLog.delete(last_commit_log_path)
         :ok
     end
   end

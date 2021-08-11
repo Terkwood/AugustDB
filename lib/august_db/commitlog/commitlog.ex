@@ -31,7 +31,7 @@ defmodule CommitLog do
     :ok = :file.close(last_device)
     next_path = new_path()
     {:ok, next_device} = :file.open(next_path, [:append, :raw])
-    {:reply, {:last_path, last_path} , {next_device, next_path, replay}}
+    {:reply, {:last_path, last_path}, {next_device, next_path, replay}}
   end
 
   def handle_cast({:begin_replay, path}, {device, write_path, _}) do
