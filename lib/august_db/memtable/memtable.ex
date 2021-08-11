@@ -98,7 +98,6 @@ defmodule Memtable do
           }
         end)
 
-        IO.puts("MT FLUSH DEL " <> last_commit_log_path)
         CommitLog.delete(last_commit_log_path)
         :ok
     end

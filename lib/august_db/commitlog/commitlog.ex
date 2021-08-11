@@ -34,8 +34,8 @@ defmodule CommitLog do
         next_path = new_path()
         {:ok, next_device} = :file.open(next_path, [:append, :raw])
         {:reply, {:last_path, last_path}, {next_device, next_path, replay}}
-      _ ->
-        {:reply, {:last_path, last_path}, {last_device, last_path, replay}}
+      some_path ->
+        {:reply, {:last_path, last_path}, {last_device, last_path, some_path}}
     end
   end
 
@@ -102,7 +102,6 @@ defmodule CommitLog do
     # currently writing to the file we want to delete.
     if GenServer.call(CommitLogDevice, {:can_delete?, inactive_path})  do
       :ok = :file.delete(inactive_path)
-      IO.puts("Deleted commit log #{inactive_path}")
     else
       IO.puts(:stderr, "Skipping delete of commit log: #{inactive_path}")
     end
