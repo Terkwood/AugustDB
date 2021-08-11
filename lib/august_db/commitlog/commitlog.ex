@@ -22,14 +22,16 @@ defmodule CommitLog do
     {:ok, {device, path}}
   end
 
-  def handle_cast(:new, {last_device, last_path}) do
-    :ok = :file.close(last_device)
-    :ok = :file.delete(last_path)
-    next_path = new_path()
-    {:ok, next_device} = :file.open(next_path, [:append, :raw])
-    {:noreply, {next_device, next_path}}
+  def handle_call({:can_delete?, inactive_path}, _from, {device, current_path}) do
+    {:reply, inactive_path != current_path , {device, current_path}}
   end
 
+  def handle_call(:swap, _from, {last_device, last_path}) do
+    :ok = :file.close(last_device)
+    next_path = new_path()
+    {:ok, next_device} = :file.open(next_path, [:append, :raw])
+    {:reply, {:last_path, last_path} ,{next_device, next_path}}
+  end
 
   def handle_cast({:append, payload}, {device, path}) do
     :file.write(device, payload)
@@ -60,13 +62,37 @@ defmodule CommitLog do
   end
 
   @doc """
+  Start a new commit log with an output device in raw & append
+  modes.
+  """
+  def swap() do
+    GenServer.call(CommitLogDevice, :swap)
+  end
+
+  @doc """
   Replay all commit log values into the memtable.
   """
   def replay() do
-    raise "TODO: rework me"
+    Path.wildcard("commit-*.log") |>
+      Enum.filter(&GenServer.call(CommitLogDevice, {:can_delete?, &1})) |>
+      Enum.map(&replay_one(&1))
+  end
+
+  def delete(inactive_path) do
+    # Just to be on the safe side, make sure we aren't
+    # currently writing to the file we want to delete.
+    if GenServer.call(CommitLogDevice, {:can_delete?, inactive_path})  do
+      :ok = :file.delete(inactive_path)
+    else
+      IO.puts(:stderr, "Cannot delete nonexistent commit log: #{inactive_path}")
+    end
+  end
+
+  defp replay_one(log_file) do
     # we need the header line so that NimbleCSV doesn't fail
     hdr = Stream.cycle([@tsv_header_string]) |> Stream.take(1)
-    log = File.stream!(@log_file, read_ahead: 100_000)
+
+    log = File.stream!(log_file, read_ahead: 100_000)
 
     Stream.concat(hdr, log)
     |> CommitLogParser.parse_stream()
@@ -95,17 +121,5 @@ defmodule CommitLog do
       end
     end)
     |> Stream.run()
-  end
-
-  def touch() do
-    File.touch!(@log_file)
-  end
-
-  @doc """
-  Delete the old commit log and open a device  to a new one
-  in raw,append mode.
-  """
-  def new() do
-    GenServer.cast(CommitLogDevice, :new)
   end
 end

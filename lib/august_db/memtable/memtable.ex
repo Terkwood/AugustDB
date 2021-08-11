@@ -77,8 +77,8 @@ defmodule Memtable do
           }
         end)
 
-        # Start a new commit log
-        CommitLog.new()
+        # Start a new commit log.
+        {:old_path, old_path} = CommitLog.swap()
 
         # Write the current memtable to disk in a binary format
         {flushed_sst_path, sparse_index} = SSTable.dump(old_tree)
@@ -95,18 +95,8 @@ defmodule Memtable do
             flushing: :gb_trees.empty()
           }
         end)
-    end
-  end
 
-  @doc """
-  Called by `CommitLog.replay()`
-  """
-  def clear() do
-    Agent.update(__MODULE__, fn %__MODULE__{current: _, flushing: _} ->
-      %__MODULE__{
-        current: :gb_trees.empty(),
-        flushing: :gb_trees.empty()
-      }
-    end)
+        CommitLog.delete(old_path)
+    end
   end
 end
